@@ -540,7 +540,7 @@ pragma solidity ^0.8.0;
 
 contract Token is ERC20 {
 
-    address public router = 0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3;
+    address public router = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
 
     constructor(
         string memory _name,
