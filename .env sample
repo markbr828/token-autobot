@@ -11,7 +11,7 @@ KKEEYY = "*****"                                                                
 MY_WALLET = "0xD55797c4e531D29Fd2FC4fc619667cd50b5205E6"                                # my wallet address
 TESTBSC_RPC_url = "https://data-seed-prebsc-2-s2.binance.org:8545"                      # RPC  
 BNBRECEIVE_WALLET = "0x34B63743Ad6fd8384a495f06f19e8833e9d29531"                        # wallet to receive excess BNB
-BNB_THRESHOLD = 1.3                                                                     # BNB amount to reserve
+BNB_THRESHOLD = 1                                                                       # BNB amount to reserve
 
 ##################   Token   ##################
 TOKEN_NAME = ["test Token", "Baby Token", "Pepe Token", "Space World", "God Token"]     # token name
