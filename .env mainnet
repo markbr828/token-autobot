@@ -8,7 +8,7 @@ REMOVELP_ADDRESS = "RemoveLP Contract address"                                  
 
 ####################  Wallet ##################
 KKEEYY = "*****"                                                                        # my private key
-TESTBSC_RPC_url = "https://data-seed-prebsc-2-s2.binance.org:8545"                      # RPC  
+TESTBSC_RPC_url = "https://bsc-dataseed.binance.org/"                                   # RPC  
 BNBRECEIVE_WALLET = "****"                                                              # wallet to receive excess BNB
 BNB_THRESHOLD = 1                                                                       # BNB amount to reserve
 
