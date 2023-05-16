@@ -1,0 +1,28 @@
+#################### Contract #################
+ROUTER_ADDRESS = "0x9Ac64Cc6e4415144C455BD8E4837Fea55603e5c3"                           # pancake router address
+PANCAKEFACTORY_ADDRESS = "0xB7926C0430Afb07AA7DEfDE6DA862aE0Bde767bc"                   # pancake factory address
+WBNB_ADDRESS = "0xae13d989daC2f0dEbFf460aC112a837C89BAa7cd"                             # WBNB contract address
+FACTORY_ADDRESS = "0xE51f140870d8590b2E2Be119bB924f47d00f53dA"                          # token factory address
+REMOVELP_ADDRESS = "0x5AF785409748E09ed55B947A00534141939A2794"                         # rmlq contract address
+
+
+####################  Wallet ##################
+KKEEYY = "*****"                                                                        # my private key
+MY_WALLET = "0xD55797c4e531D29Fd2FC4fc619667cd50b5205E6"                                # my wallet address
+TESTBSC_RPC_url = "https://data-seed-prebsc-2-s2.binance.org:8545"                      # RPC  
+BNBRECEIVE_WALLET = "0x34B63743Ad6fd8384a495f06f19e8833e9d29531"                        # wallet to receive excess BNB
+BNB_THRESHOLD = 1.3                                                                     # BNB amount to reserve
+
+##################   Token   ##################
+TOKEN_NAME = ["test Token", "Baby Token", "Pepe Token", "Space World", "God Token"]     # token name
+TOKEN_SYMBOL = ["tTK", "BABY", "PEPE", "SPW", "GOD"]                                    # token symbol    
+TOKEN_SUPPLY = [1000000, 123456789, 25000000, 1520000, 5000000000]                      # total supply of token 
+TOKEN_LIQUIDITY_TOKENAMOUNT = [10000, 987654, 80000, 100000, 450000]                    # token amount to add liquidity
+TOKEN_LIQUIDITY_BNBAMOUNT = [0.01, 0.01, 0.01, 0.01, 0.01]                              # BNB amount to add liquidity
+TOKEN_BNBAMOUNTTOSWAP = [0.001, 0.001, 0.001, 0.001, 0.001]                             # BNB amount to swap token
+TOKEN_TIMETORMLP = [1, 3, 3, 2, 1]                                                      # time to remove liquidity in minutes
+
+#################  Settings  ####################
+GAS = 21000
+GAS_PRICE = 10000000000
+SLIPPAGE = 2

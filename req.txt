@@ -1,0 +1,37 @@
+1. Deploy an ERC20 token on BSC
+2. Verify the deployed contract (if not already verified).
+3. Approve the deployed token for use.
+4. Add a specific amount of BNB liquidity on Pancakeswap (To to set by the user) and send LPs to the "liquidity removal contract" in the same transaction(check reference 3)
+5. Execute a token swap between the deployed token and a specific amount of BNB (To be set by the user)
+6. Remove the liquidity after a specific amount of time has elapsed (through contract). The x number of minutes to be set by the user.
+7. If the amount of BNB remaining after removing liquidity is greater than the amount at step 1, transfer the excess BNB to another wallet. If not, then no transfer is required. (For example, wallet balance is 1 BNB at step 1. If by step 5 the wallet balance is 1.5 BNB, keep 1 BNB in the wallet and transfer the excess 0.5 BNB to another specified wallet. If the balance is less than 1 BNB, say 0.8 BNB, then no transfer is needed.
+8. Swap the retrieved WBNB to BNB
+8. Repeat the process from step 1 by deploying a new token (token names will be provided).
+
+Reference 1: The above steps are exactly as per the these 2 reference wallets:
+https://bscscan.com/address/0x9e2a28c82a5d85c64e3514058489c96ca9fe718c
+https://bscscan.com/address/0x963c744444792de15f1c473e7ae0801a39f4a445
+
+Reference 2: These 2 are the liquidity removal contracts for the above 2 wallets:
+https://bscscan.com/address/0x50878Be70F08dbdb5B51A975940c20fA351e1761#code
+https://bscscan.com/address/0xa19c820959757ccfbc1cf847fa7fbedc86434470#code
+
+Reference 3: Transaction showing the liquidity added and LPs sent to a liquidity removal contract in a single transaction.
+https://bscscan.com/tx/0xfea3c833d2298121ca43fc36727f6990dfa3aa5ba923d7248e77953e40fb14d6
+
+
+
+Reference 3: This is one of the tokens created by the above wallet
+https://bscscan.com/token/0x6fb55c0b0c1990a688610ad55301c701f8fc65a6#code
+ 
+Note:
+
+1. The user should be able to trigger "remove liquidity" at any moment, bypassing the time set by the user. In that case the bot should jump to step 7 and continue.
+2. The user should be able to set gas fee and slippage
+3. The user should be able to run multiple simultaneous sessions. In the case of the reference wallets, only 1 person seems to be managing both the wallets and has deployed a separate liquidity removal contract for each wallet.
+4. The freelancer can either make a new contract for creating tokens and removing liquidity or can use the code from the reference contracts
+5. The 9 steps should keep running until the user terminates the script. If for example 15 token names are provided, the bot should keep re-using the names even if all 15 tokens are created.
+6. Make sure the following warning message is not displayed for the deployed token on http://dexview.com:
+"An unlocked wallet is holding 100% of the 'token name'/WBNB LP, we highly recommend it should be locked with PinkLock"
+7. The freelancer agrees to make minor modifications to the bot if needed by the client.
+8. Deliver the final version of the bot within 4 day
