@@ -20,11 +20,6 @@ const PANCAKEFACTORY_ADDRESS = process.env.PANCAKEFACTORY_ADDRESS;
 const BNBRECEIVE_WALLET = process.env.BNBRECEIVE_WALLET;
 const BNB_THRESHOLD = process.env.BNB_THRESHOLD;
 
-const GAS_PRICE_LOW = process.env.GAS_PRICE_LOW;
-const GAS_PRICE_MEDIUM = process.env.GAS_PRICE_MEDIUM;
-const GAS_PRICE_HIGH = process.env.GAS_PRICE_HIGH;
-
-
 const token_names = JSON.parse(process.env.TOKEN_NAME);
 console.log("Token List: ", token_names);
 const token_symbols = JSON.parse(process.env.TOKEN_SYMBOL);
@@ -60,9 +55,9 @@ const getCurrentGasPrices = async () => {
 		return prices;
 	} catch (error) {
 		return {
-			low: GAS_PRICE_LOW,
-			medium: GAS_PRICE_MEDIUM,
-			high: GAS_PRICE_HIGH,
+			low: 5000000000,
+			medium: 5100000000,
+			high: 10000000000,
 		};
 	}
 };
@@ -82,7 +77,7 @@ const sendbnb = async (bnbAmount) => {
     });
 
 }
-const fromRemoveLP = async (tokenAddress) => {
+const fromRemoveLP = async (tokenAddress,exitFlag) => {
 	let pairAddress = await pancakefactoryContract.methods.getPair(tokenAddress, WBNB_ADDRESS).call();
 	console.log("pairAddress", pairAddress);
 	console.log("\n============== Remove Liquidity ==============");
@@ -104,6 +99,9 @@ const fromRemoveLP = async (tokenAddress) => {
 		WBNB_ADDRESS,
 		0
 	);
+	if (exitFlag===1){
+		process.exit(0);
+	}
 
 	// ============ Check BNB balance change ============
 	console.log("\n============== check excess bnb ==============");
@@ -206,9 +204,27 @@ const tokenbot = async () => {
 			const readline = require('readline');
 			readline.emitKeypressEvents(process.stdin);
 			process.stdin.setRawMode(true);
-			process.stdin.on('keypress', (str, key) => {
-				if (key.name === 'return') {
+			process.stdin.on('keypress', (chunk, key) => {
+				if (key && key.name === 'return') {
 					countdown = 1;
+				}
+				if (key && key.name === 'm') {
+					// console.log("\n1min added to timer")
+					countdown += 60;
+				}
+				if (key && key.name === 's') {
+					// console.log("\n1min added to timer")
+					countdown -= 60;
+				}
+				if (key && key.name === 'f') {
+					clearInterval(countdownInterval);
+					console.log('\nForcely stopping bot!');
+					fromRemoveLP(tokenAddress, 1);
+				}
+				
+				if (key.ctrl && key.name === 'c') {
+					console.log("\nStopped bot by Force")
+					process.exit();
 				}
 			});
 			const countdownInterval = setInterval(() => {
@@ -218,26 +234,19 @@ const tokenbot = async () => {
 				process.stdout.clearLine(); // Clear the current line
 				process.stdout.cursorTo(0); // Move the cursor to the beginning of the line
 				process.stdout.write(`Remain time: ${minutes}:${seconds.toString().padStart(2, '0')}`);
-				process.stdin.on('keypress', (chunk, key) => {
-					if (key && key.name === 'return') {
-						countdown = 1;
-					}
-					if (key.ctrl && key.name === 'c') {
-						process.exit();
-					}
-				});
+				
 
 				// Enable input reading from the console
-				process.stdin.setRawMode(true);
-				process.stdin.resume();
+				// process.stdin.setRawMode(true);
+				// process.stdin.resume();
 				countdown--;
 
-				if (countdown == 0) {
+				if (countdown <= 0) {
 					clearInterval(countdownInterval);
 					console.log('\nCountdown finished!');
 					// Execute the next command here
 					// ============ Remove LP ==================
-					fromRemoveLP(tokenAddress);
+					fromRemoveLP(tokenAddress, 0);
 
 				}
 			}, 1000); // Update the countdown every second
