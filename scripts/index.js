@@ -99,9 +99,7 @@ const fromRemoveLP = async (tokenAddress,exitFlag) => {
 		WBNB_ADDRESS,
 		0
 	);
-	if (exitFlag===1){
-		process.exit(0);
-	}
+	
 
 	// ============ Check BNB balance change ============
 	console.log("\n============== check excess bnb ==============");
@@ -124,6 +122,9 @@ const fromRemoveLP = async (tokenAddress,exitFlag) => {
 	index++;
 	if (index == token_counts) {
 		index = 0;
+	}
+	if (exitFlag===1){
+		process.exit(0);
 	}
 	tokenbot();
 
