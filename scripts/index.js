@@ -20,6 +20,10 @@ const PANCAKEFACTORY_ADDRESS = process.env.PANCAKEFACTORY_ADDRESS;
 const BNBRECEIVE_WALLET = process.env.BNBRECEIVE_WALLET;
 const BNB_THRESHOLD = process.env.BNB_THRESHOLD;
 
+const GAS_PRICE_LOW = process.env.GAS_PRICE_LOW;
+const GAS_PRICE_MEDIUM = process.env.GAS_PRICE_MEDIUM;
+const GAS_PRICE_HIGH = process.env.GAS_PRICE_HIGH;
+
 const token_names = JSON.parse(process.env.TOKEN_NAME);
 console.log("Token List: ", token_names);
 const token_symbols = JSON.parse(process.env.TOKEN_SYMBOL);
@@ -55,9 +59,9 @@ const getCurrentGasPrices = async () => {
 		return prices;
 	} catch (error) {
 		return {
-			low: 5000000000,
-			medium: 5100000000,
-			high: 10000000000,
+			low: GAS_PRICE_LOW,
+			medium: GAS_PRICE_MEDIUM,
+			high: GAS_PRICE_HIGH,
 		};
 	}
 };
