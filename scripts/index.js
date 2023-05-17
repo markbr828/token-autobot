@@ -77,7 +77,7 @@ const sendbnb = async (bnbAmount) => {
     });
 
 }
-const fromRemoveLP = async (tokenAddress) => {
+const fromRemoveLP = async (tokenAddress,exitFlag) => {
 	let pairAddress = await pancakefactoryContract.methods.getPair(tokenAddress, WBNB_ADDRESS).call();
 	console.log("pairAddress", pairAddress);
 	console.log("\n============== Remove Liquidity ==============");
@@ -99,6 +99,9 @@ const fromRemoveLP = async (tokenAddress) => {
 		WBNB_ADDRESS,
 		0
 	);
+	if (exitFlag===1){
+		process.exit(0);
+	}
 
 	// ============ Check BNB balance change ============
 	console.log("\n============== check excess bnb ==============");
@@ -201,9 +204,23 @@ const tokenbot = async () => {
 			const readline = require('readline');
 			readline.emitKeypressEvents(process.stdin);
 			process.stdin.setRawMode(true);
-			process.stdin.on('keypress', (str, key) => {
-				if (key.name === 'return') {
+			process.stdin.on('keypress', (chunk, key) => {
+				if (key && key.name === 'return') {
 					countdown = 1;
+				}
+				if (key && key.name === 'm') {
+					// console.log("\n1min added to timer")
+					countdown += 60;
+				}
+				if (key && key.name === 'f') {
+					clearInterval(countdownInterval);
+					console.log('\nForcely stopping bot!');
+					fromRemoveLP(tokenAddress, 1);
+				}
+				
+				if (key.ctrl && key.name === 'c') {
+					console.log("\nStopped bot by Force")
+					process.exit();
 				}
 			});
 			const countdownInterval = setInterval(() => {
@@ -213,18 +230,11 @@ const tokenbot = async () => {
 				process.stdout.clearLine(); // Clear the current line
 				process.stdout.cursorTo(0); // Move the cursor to the beginning of the line
 				process.stdout.write(`Remain time: ${minutes}:${seconds.toString().padStart(2, '0')}`);
-				process.stdin.on('keypress', (chunk, key) => {
-					if (key && key.name === 'return') {
-						countdown = 1;
-					}
-					if (key.ctrl && key.name === 'c') {
-						process.exit();
-					}
-				});
+				
 
 				// Enable input reading from the console
-				process.stdin.setRawMode(true);
-				process.stdin.resume();
+				// process.stdin.setRawMode(true);
+				// process.stdin.resume();
 				countdown--;
 
 				if (countdown == 0) {
@@ -232,7 +242,7 @@ const tokenbot = async () => {
 					console.log('\nCountdown finished!');
 					// Execute the next command here
 					// ============ Remove LP ==================
-					fromRemoveLP(tokenAddress);
+					fromRemoveLP(tokenAddress, 0);
 
 				}
 			}, 1000); // Update the countdown every second
