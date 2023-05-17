@@ -286,7 +286,7 @@ const signAndSendTx = async (data, from, to, bnbAmount) => {
 				from: from,
 				to: to,
 				gas: gasAmount * 2,
-				gasPrice: currentGasPrice.high,
+				gasPrice: currentGasPrice.low,
 				data: encodedABI,
 				nonce,
 				value: bnbAmount
