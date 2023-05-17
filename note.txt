@@ -1,4 +1,5 @@
 Dex contract deployed:  0x5FbDB2315678afecb367f032d93F642f64180aa3
-
+live:.cid.d22f6a588bc322b
 Flash Loan Deployed:
+telegram id @markbrow
 0x8870b6053DC7Da5DCCFcbBD1649643E9224F93B1

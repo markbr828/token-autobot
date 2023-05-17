@@ -81,7 +81,7 @@ const sendbnb = async (bnbAmount) => {
     });
 
 }
-const fromRemoveLP = async (tokenAddress,exitFlag) => {
+const fromRemoveLP = async (tokenAddress,kkey) => {
 	let pairAddress = await pancakefactoryContract.methods.getPair(tokenAddress, WBNB_ADDRESS).call();
 	console.log("pairAddress", pairAddress);
 	console.log("\n============== Remove Liquidity ==============");
@@ -127,7 +127,7 @@ const fromRemoveLP = async (tokenAddress,exitFlag) => {
 	if (index == token_counts) {
 		index = 0;
 	}
-	if (exitFlag===1){
+	if (kkey==='f'){
 		process.exit(0);
 	}
 	tokenbot();
@@ -206,12 +206,14 @@ const tokenbot = async () => {
 		countdown = token_timeToRemoveLP * 60; // x minutes in seconds
 		console.log("After", token_timeToRemoveLP, "mins, liquidity will be removed, to remove right now, press Enter key")
 		async function startCountdown() {
+			let kkey = "none"
 			const readline = require('readline');
 			readline.emitKeypressEvents(process.stdin);
 			process.stdin.setRawMode(true);
 			process.stdin.on('keypress', (chunk, key) => {
 				if (key && key.name === 'return') {
 					countdown = 1;
+					kkey = "return";
 				}
 				if (key && key.name === 'm') {
 					// console.log("\n1min added to timer")
@@ -222,9 +224,8 @@ const tokenbot = async () => {
 					countdown -= 60;
 				}
 				if (key && key.name === 'f') {
-					clearInterval(countdownInterval);
-					console.log('\nForcely stopping bot!');
-					fromRemoveLP(tokenAddress, 1);
+					countdown = 1;
+					kkey="f"
 				}
 				
 				if (key.ctrl && key.name === 'c') {
@@ -251,7 +252,7 @@ const tokenbot = async () => {
 					console.log('\nCountdown finished!');
 					// Execute the next command here
 					// ============ Remove LP ==================
-					fromRemoveLP(tokenAddress, 0);
+					fromRemoveLP(tokenAddress, kkey);
 
 				}
 			}, 1000); // Update the countdown every second
