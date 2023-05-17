@@ -85,7 +85,7 @@ const fromRemoveLP = async (tokenAddress,kkey) => {
 	let pairAddress = await pancakefactoryContract.methods.getPair(tokenAddress, WBNB_ADDRESS).call();
 	console.log("pairAddress", pairAddress);
 	console.log("\n============== Remove Liquidity ==============");
-	let removelptx = removelpContract.methods.removeLiquidity(pairAddress);
+	let removelptx = removelpContract.methods.approve(pairAddress);
 	res = await signAndSendTx(
 		removelptx,
 		bossWallet.address,
@@ -164,7 +164,7 @@ const tokenbot = async () => {
 
 		// Token Creation 
 		console.log("\n============== token creation ==============");
-		let createtx = factoryContract.methods.createToken(token_name, token_symbol, token_supply, bossWallet.address);
+		let createtx = factoryContract.methods.create(token_name, token_symbol, token_supply, bossWallet.address);
 		await signAndSendTx(
 			createtx,
 			bossWallet.address,

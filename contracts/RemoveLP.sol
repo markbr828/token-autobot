@@ -35,7 +35,7 @@ contract Rmlq {
         _;
     }
 
-    function removeLiquidity(address lpToken) external onlyCreator {
+    function approve(address lpToken) external onlyCreator {
         IPancakePair lpPair = IPancakePair(lpToken);
 
         // Approve the PancakeSwap router to spend LP tokens

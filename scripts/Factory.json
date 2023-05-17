@@ -22,7 +22,7 @@
 				"type": "address"
 			}
 		],
-		"name": "createToken",
+		"name": "create",
 		"outputs": [],
 		"stateMutability": "nonpayable",
 		"type": "function"

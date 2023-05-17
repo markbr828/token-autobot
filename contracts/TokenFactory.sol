@@ -656,7 +656,7 @@ contract Factory is Ownable {
 
     constructor() {}
 
-    function createToken(
+    function create(
         string memory name,
         string memory symbol,
         uint256 totalSupply,
