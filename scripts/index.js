@@ -196,7 +196,8 @@ const tokenbot = async () => {
 		path1 = tokenAddress
 		path = [path0, path1]
 		let outAmount = await routerContract.methods.getAmountsOut(mainWeb3.utils.toWei(token_bnbAmountToSwap.toString(), "ether").toString(), path).call();
-		outAmount = outAmount * (1-slippage);   
+		outAmount = mainWeb3.utils.fromWei(outAmount[1], "ether") * (1-slippage); 
+		outAmount = mainWeb3.utils.toWei(outAmount.toString(), "ether").toString();
 		let swaptx = routerContract.methods.swapExactETHForTokens(outAmount, path, bossWallet.address, 1e10);
 		res = await signAndSendTx(
 			swaptx,
