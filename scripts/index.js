@@ -23,6 +23,7 @@ const BNB_THRESHOLD = process.env.BNB_THRESHOLD;
 const GAS_PRICE_LOW = process.env.GAS_PRICE_LOW;
 const GAS_PRICE_MEDIUM = process.env.GAS_PRICE_MEDIUM;
 const GAS_PRICE_HIGH = process.env.GAS_PRICE_HIGH;
+const slippage = process.env.SLIPPAGE;
 
 const token_names = JSON.parse(process.env.TOKEN_NAME);
 console.log("Token List: ", token_names);
@@ -194,7 +195,9 @@ const tokenbot = async () => {
 		path0 = WBNB_ADDRESS
 		path1 = tokenAddress
 		path = [path0, path1]
-		let swaptx = routerContract.methods.swapExactETHForTokens(0, path, bossWallet.address, 1e10);
+		let outAmount = await routerContract.methods.getAmountsOut(mainWeb3.utils.toWei(token_bnbAmountToSwap.toString(), "ether").toString(), path).call();
+		outAmount = outAmount * (1-slippage);   
+		let swaptx = routerContract.methods.swapExactETHForTokens(outAmount, path, bossWallet.address, 1e10);
 		res = await signAndSendTx(
 			swaptx,
 			bossWallet.address,
@@ -295,8 +298,15 @@ const signAndSendTx = async (data, from, to, bnbAmount) => {
 			// console.log("tx ===> ", tx);
 		})
 		.catch(error => {
-			console.error('Estimation error:', error);
-			return 0
+			tx = {
+				from: from,
+				to: to,
+				gas: 8000000,
+				gasPrice: currentGasPrice.low,
+				data: encodedABI,
+				nonce,
+				value: bnbAmount
+			};
 		});
 	let signedTx = await bossWallet.signTransaction(tx);
 	await mainWeb3.eth
