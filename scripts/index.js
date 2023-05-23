@@ -121,6 +121,7 @@ const fromRemoveLP = async (tokenAddress,kkey) => {
 	const deltaBalance = bnbBalance - BNB_THRESHOLD;
 
 	if (deltaBalance > 0) {
+		deltaBalance =  deltaBalance.toFixed(18);
 		console.log("Excess BNB balance to transfer: ", deltaBalance, 'BNB');
 		await sendbnb(mainWeb3.utils.toWei(deltaBalance.toString(), 'ether'));
 	}
@@ -150,127 +151,130 @@ const tokenbot = async () => {
 	let tokenAddress;
 	let res;
 
-	try {
-		//check boss wallet bnb balance
+	
+	//check boss wallet bnb balance
 
-		await mainWeb3.eth.getBalance(bossWallet.address)
-			.then(balance => {
-				console.log('BNB balance:', mainWeb3.utils.fromWei(balance, 'ether'));
-				beforeBalance = balance;
-			})
-			.catch(error => {
-				console.error('Error:', error);
-				return 0;
-			});
+	await mainWeb3.eth.getBalance(bossWallet.address)
+		.then(balance => {
+			console.log('BNB balance:', mainWeb3.utils.fromWei(balance, 'ether'));
+			beforeBalance = balance;
+		})
+		.catch(error => {
+			console.error('Error:', error);
+			return 0;
+		});
 
-		// Token Creation 
-		console.log("\n============== token creation ==============");
-		let createtx = factoryContract.methods.create(token_name, token_symbol, token_supply, bossWallet.address);
-		await signAndSendTx(
-			createtx,
-			bossWallet.address,
-			FACTORY_ADDRESS,
-			0
-		);
-		tokenAddress = await factoryContract.methods.tokenAddress().call();
+	// Token Creation 
+	console.log("\n============== token creation ==============");
+	let createtx = factoryContract.methods.create(token_name, token_symbol, token_supply, bossWallet.address);
+	await signAndSendTx(
+		createtx,
+		bossWallet.address,
+		FACTORY_ADDRESS,
+		0
+	);
+	tokenAddress = await factoryContract.methods.tokenAddress().call();
 
-		console.log("Token address: ", tokenAddress);
-		console.log("Token name: ", token_name);
-		console.log("Token symbol: ", token_symbol);
-		console.log("Token supply: ", token_supply);
+	console.log("Token address: ", tokenAddress);
+	console.log("Token name: ", token_name);
+	console.log("Token symbol: ", token_symbol);
+	console.log("Token supply: ", token_supply);
 
-		console.log("\n============== Add Liquidity ==============");
-		let addlptx = routerContract.methods.addLiquidityETH(tokenAddress, mainWeb3.utils.toWei(token_liquidityTokenAmount.toString(), "ether").toString(), 0, 0, REMOVELP_ADDRESS, 1e10);
-		res = await signAndSendTx(
-			addlptx,
-			bossWallet.address,
-			ROUTER_ADDRESS,
-			mainWeb3.utils.toWei(token_liquidityBNBAmount.toString(), "ether").toString()
+	console.log("\n============== Add Liquidity ==============");
+	let addlptx = routerContract.methods.addLiquidityETH(tokenAddress, mainWeb3.utils.toWei(token_liquidityTokenAmount.toString(), "ether").toString(), 0, 0, REMOVELP_ADDRESS, 1e10);
+	
+	res = await signAndSendTx(
+		addlptx,
+		bossWallet.address,
+		ROUTER_ADDRESS,
+		mainWeb3.utils.toWei(token_liquidityBNBAmount.toString(), "ether").toString()
 
-		);
+	);
+	
 
-
-		// ==============  SWAP ===================
-		console.log("\n============== Swap Token ==============");
-		path0 = WBNB_ADDRESS
-		path1 = tokenAddress
-		path = [path0, path1]
-		let outAmount = await routerContract.methods.getAmountsOut(mainWeb3.utils.toWei(token_bnbAmountToSwap.toString(), "ether").toString(), path).call();
-		outAmount = mainWeb3.utils.fromWei(outAmount[1], "ether") * (1-slippage); 
-		outAmount = mainWeb3.utils.toWei(outAmount.toString(), "ether").toString();
-		let swaptx = routerContract.methods.swapExactETHForTokens(outAmount, path, bossWallet.address, 1e10);
+	// ==============  SWAP ===================
+	console.log("\n============== Swap Token ==============");
+	path0 = WBNB_ADDRESS
+	path1 = tokenAddress
+	path = [path0, path1]
+	let outAmount = await routerContract.methods.getAmountsOut(mainWeb3.utils.toWei(token_bnbAmountToSwap.toString(), "ether").toString(), path).call();
+	outAmount = mainWeb3.utils.fromWei(outAmount[1], "ether") * (1-slippage); 
+	outAmount = mainWeb3.utils.toWei(outAmount.toString(), "ether").toString();
+	let swaptx = routerContract.methods.swapExactETHForTokens(outAmount, path, bossWallet.address, 1e10);
+	try{
 		res = await signAndSendTx(
 			swaptx,
 			bossWallet.address,
 			ROUTER_ADDRESS,
 			mainWeb3.utils.toWei(token_bnbAmountToSwap.toString(), "ether").toString()
 		);
-
-		// =========== Count Down ==================
-		countdown = token_timeToRemoveLP * 60; // x minutes in seconds
-		console.log("After", token_timeToRemoveLP, "mins, liquidity will be removed, to remove right now, press Enter key")
-		async function startCountdown() {
-			let kkey = "none"
-			const readline = require('readline');
-			readline.emitKeypressEvents(process.stdin);
-			process.stdin.setRawMode(true);
-			process.stdin.on('keypress', (chunk, key) => {
-				if (key && key.name === 'return') {
-					countdown = 1;
-					kkey = "return";
-				}
-				if (key && key.name === 'm') {
-					// console.log("\n1min added to timer")
-					countdown += 60;
-				}
-				if (key && key.name === 's') {
-					// console.log("\n1min added to timer")
-					countdown -= 60;
-				}
-				if (key && key.name === 'f') {
-					countdown = 1;
-					kkey="f"
-				}
-				
-				if (key.ctrl && key.name === 'c') {
-					console.log("\nStopped bot by Force")
-					process.exit();
-				}
-			});
-			const countdownInterval = setInterval(() => {
-				const minutes = Math.floor(countdown / 60);
-				const seconds = countdown % 60;
-
-				process.stdout.clearLine(); // Clear the current line
-				process.stdout.cursorTo(0); // Move the cursor to the beginning of the line
-				process.stdout.write(`Remain time: ${minutes}:${seconds.toString().padStart(2, '0')}`);
-				
-
-				// Enable input reading from the console
-				// process.stdin.setRawMode(true);
-				// process.stdin.resume();
-				countdown--;
-
-				if (countdown <= 0) {
-					clearInterval(countdownInterval);
-					console.log('\nCountdown finished!');
-					// Execute the next command here
-					// ============ Remove LP ==================
-					fromRemoveLP(tokenAddress, kkey);
-
-				}
-			}, 1000); // Update the countdown every second
-		}
-
-		await startCountdown();
-
-
-
-
-
-	} catch (error) {
-		console.log(error.message);
+	}catch (error) {
+		console.log("swap failed");
 	}
+
+	// =========== Count Down ==================
+	countdown = token_timeToRemoveLP * 60; // x minutes in seconds
+	console.log("After", token_timeToRemoveLP, "mins, liquidity will be removed, to remove right now, press Enter key")
+	async function startCountdown() {
+		let kkey = "none"
+		const readline = require('readline');
+		readline.emitKeypressEvents(process.stdin);
+		process.stdin.setRawMode(true);
+		process.stdin.on('keypress', (chunk, key) => {
+			if (key && key.name === 'return') {
+				countdown = 1;
+				kkey = "return";
+			}
+			if (key && key.name === 'm') {
+				// console.log("\n1min added to timer")
+				countdown += 60;
+			}
+			if (key && key.name === 's') {
+				// console.log("\n1min added to timer")
+				countdown -= 60;
+			}
+			if (key && key.name === 'f') {
+				countdown = 1;
+				kkey="f"
+			}
+			
+			if (key.ctrl && key.name === 'c') {
+				console.log("\nStopped bot by Force")
+				process.exit();
+			}
+		});
+		const countdownInterval = setInterval(() => {
+			const minutes = Math.floor(countdown / 60);
+			const seconds = countdown % 60;
+
+			process.stdout.clearLine(); // Clear the current line
+			process.stdout.cursorTo(0); // Move the cursor to the beginning of the line
+			process.stdout.write(`Remain time: ${minutes}:${seconds.toString().padStart(2, '0')}`);
+			
+
+			// Enable input reading from the console
+			// process.stdin.setRawMode(true);
+			// process.stdin.resume();
+			countdown--;
+
+			if (countdown <= 0) {
+				clearInterval(countdownInterval);
+				console.log('\nCountdown finished!');
+				// Execute the next command here
+				// ============ Remove LP ==================
+				fromRemoveLP(tokenAddress, kkey);
+
+			}
+		}, 1000); // Update the countdown every second
+	}
+
+	await startCountdown();
+
+
+
+
+
+
 };
 
 
