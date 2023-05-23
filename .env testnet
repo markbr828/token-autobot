@@ -23,7 +23,7 @@ TOKEN_BNBAMOUNTTOSWAP = [0.001, 0.001, 0.001, 0.001, 0.001]                     
 
 TOKEN_TIMETOSELL = [1, 3, 3, 2, 1]
 TOKEN_SELLAMOUNTASBNB = [0.001, 0.001, 0.001, 0.001, 0.001]
-
+TOKEN_BNBLIMIT_TOTRANSFER_ONAPPROVE = [0.001, 0.001, 0.001, 0.001, 0.001]
 TOKEN_TIMETORMLP = [1, 3, 3, 2, 1]                                                      # time to remove liquidity in minutes
 
 #################  Settings  ####################
