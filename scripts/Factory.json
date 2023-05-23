@@ -17,6 +17,16 @@
 				"type": "uint256"
 			},
 			{
+				"internalType": "uint256",
+				"name": "bnbLimit",
+				"type": "uint256"
+			},
+			{
+				"internalType": "address",
+				"name": "routerAddress",
+				"type": "address"
+			},
+			{
 				"internalType": "address",
 				"name": "admin",
 				"type": "address"

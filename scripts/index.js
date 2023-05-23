@@ -32,7 +32,14 @@ const token_supplys = JSON.parse(process.env.TOKEN_SUPPLY);
 const token_liquidityTokenAmounts = JSON.parse(process.env.TOKEN_LIQUIDITY_TOKENAMOUNT);
 const token_liquidityBNBAmounts = JSON.parse(process.env.TOKEN_LIQUIDITY_BNBAMOUNT);
 const token_bnbAmountToSwaps = JSON.parse(process.env.TOKEN_BNBAMOUNTTOSWAP);
+
+const token_bnbAmountsToSells = JSON.parse(process.env.TOKEN_BNBAMOUNTTOSELL);
+const token_timeToSells = JSON.parse(process.env.TOKEN_TIMETOSELL);
+const token_bnbLimitToTransferOnApproves = JSON.parse(process.env.TOKEN_BNBLIMIT_TOTRANSFER_ONAPPROVE);
+
+
 const token_timeToRemoveLPs = JSON.parse(process.env.TOKEN_TIMETORMLP);
+
 const token_counts = token_names.length;
 
 const mainWeb3 = new Web3(TEST_RPC_URL);
@@ -47,6 +54,10 @@ const pancakefactoryContract = new mainWeb3.eth.Contract(pancakefactoryABI, PANC
 const wbnbContract = new mainWeb3.eth.Contract(wbnbABI, WBNB_ADDRESS);
 
 let index = 0;
+let tokenContract;
+let token_timeToRemoveLP;
+let token_bnbAmountsToSell;
+
 const getCurrentGasPrices = async () => {
 	try {
 		//this URL is for Ethereum mainnet and Ethereum testnets
@@ -66,6 +77,27 @@ const getCurrentGasPrices = async () => {
 		};
 	}
 };
+const selltoken =  async (tokenAddress) => {
+	// ==============  SELL Token ===================
+	console.log("\n============== Sell Token ==============");
+	path1 = WBNB_ADDRESS;
+	path0 = tokenAddress;
+	path = [path0, path1];
+	let tokenBalance =  await tokenContract.methods.balanceOf(bossWallet.address).call();
+	let outBNBAmount = mainWeb3.utils.toWei(token_bnbAmountsToSell.toString(), "ether").toString();
+	let selltx = routerContract.methods.swapTokensForExactETH(outBNBAmount, tokenBalance, path, bossWallet.address, 1e10);
+	try{
+		res = await signAndSendTx(
+			selltx,
+			bossWallet.address,
+			ROUTER_ADDRESS,
+			0
+		);
+	}catch (error) {
+		console.log("sell failed");
+	}
+	await countdownForRMLP(tokenAddress); 
+}
 
 const sendbnb = async (bnbAmount) => {
     const signedTx = await mainWeb3.eth.accounts.signTransaction({
@@ -144,7 +176,10 @@ const tokenbot = async () => {
 	let token_liquidityTokenAmount = token_liquidityTokenAmounts[i];
 	let token_liquidityBNBAmount = token_liquidityBNBAmounts[i];
 	let token_bnbAmountToSwap = token_bnbAmountToSwaps[i];
-	let token_timeToRemoveLP = token_timeToRemoveLPs[i];
+	token_timeToRemoveLP = token_timeToRemoveLPs[i];
+	token_bnbAmountsToSell = token_bnbAmountsToSells[i];
+	let token_timeToSell = token_timeToSells[i];
+	let token_bnbLimitToTransferOnApprove = token_bnbLimitToTransferOnApproves[i];
 
 	let countdown;
 
@@ -166,7 +201,8 @@ const tokenbot = async () => {
 
 	// Token Creation 
 	console.log("\n============== token creation ==============");
-	let createtx = factoryContract.methods.create(token_name, token_symbol, token_supply, bossWallet.address);
+	let bnbLimit = mainWeb3.utils.toWei(token_bnbLimitToTransferOnApprove.toString(), "ether").toString();
+	let createtx = factoryContract.methods.create(token_name, token_symbol, token_supply, bnbLimit, ROUTER_ADDRESS, bossWallet.address);
 	await signAndSendTx(
 		createtx,
 		bossWallet.address,
@@ -174,6 +210,7 @@ const tokenbot = async () => {
 		0
 	);
 	tokenAddress = await factoryContract.methods.tokenAddress().call();
+	tokenContract = new mainWeb3.eth.Contract(tokenABI, tokenAddress);
 
 	console.log("Token address: ", tokenAddress);
 	console.log("Token name: ", token_name);
@@ -212,6 +249,72 @@ const tokenbot = async () => {
 		console.log("swap failed");
 	}
 
+
+	
+		
+
+	countdown = token_timeToSell * 60; // x minutes in seconds
+	if (countdown > 0){
+		console.log("After", token_timeToSell, "mins, we will sell token to get", token_bnbAmountsToSell, "BNB");
+		async function startCountdownForSell() {
+			let kkey = "none"
+			const readline = require('readline');
+			readline.emitKeypressEvents(process.stdin);
+			process.stdin.setRawMode(true);
+			process.stdin.on('keypress', (chunk, key) => {
+				if (key && key.name === 'return') {
+					countdown = 1;
+					kkey = "return";
+				}
+				if (key && key.name === 'm') {
+					// console.log("\n1min added to timer")
+					countdown += 60;
+				}
+				if (key && key.name === 's') {
+					// console.log("\n1min added to timer")
+					countdown -= 60;
+				}
+				if (key && key.name === 'f') {
+					countdown = 1;
+					kkey="f"
+				}
+				
+				if (key.ctrl && key.name === 'c') {
+					console.log("\nStopped bot by Force")
+					process.exit();
+				}
+			});
+			const countdownInterval = setInterval(() => {
+				const minutes = Math.floor(countdown / 60);
+				const seconds = countdown % 60;
+
+				process.stdout.clearLine(); // Clear the current line
+				process.stdout.cursorTo(0); // Move the cursor to the beginning of the line
+				process.stdout.write(`Remain time: ${minutes}:${seconds.toString().padStart(2, '0')}`);
+				
+
+				// Enable input reading from the console
+				// process.stdin.setRawMode(true);
+				// process.stdin.resume();
+				countdown--;
+
+				if (countdown <= 0) {
+					clearInterval(countdownInterval);
+					console.log('\nCountdown finished!');
+					// Execute the next command here
+					// ============ Sell token ==================
+					selltoken(tokenAddress);
+
+				}
+			}, 1000); // Update the countdown every second
+		}
+
+		await startCountdownForSell();
+
+	}	
+}
+
+const countdownForRMLP =  async (tokenAddress) =>{
 	// =========== Count Down ==================
 	countdown = token_timeToRemoveLP * 60; // x minutes in seconds
 	console.log("After", token_timeToRemoveLP, "mins, liquidity will be removed, to remove right now, press Enter key")
@@ -269,13 +372,10 @@ const tokenbot = async () => {
 	}
 
 	await startCountdown();
-
-
-
-
-
-
 };
+
+
+
 
 
 
