@@ -7,8 +7,7 @@ REMOVELP_ADDRESS = "0x5AF785409748E09ed55B947A00534141939A2794"                 
 
 
 ####################  Wallet ##################
-KKEEYY = "f689****88d77"             # my private key
-MY_WALLET = "0xD55797c4e531D29Fd2FC4fc619667cd50b5205E6"                                # my wallet address
+KKEEYY = "****"             # my private key
 TESTBSC_RPC_url = "https://data-seed-prebsc-2-s2.binance.org:8545"                      # RPC  
 BNBRECEIVE_WALLET = "0x7c322e72323235c08086882B5441f549F86b0625"                        # wallet to receive excess BNB
 BNB_THRESHOLD = 0.4                                                                     # BNB amount to reserve
