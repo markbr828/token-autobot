@@ -33,9 +33,9 @@ const token_liquidityTokenAmounts = JSON.parse(process.env.TOKEN_LIQUIDITY_TOKEN
 const token_liquidityBNBAmounts = JSON.parse(process.env.TOKEN_LIQUIDITY_BNBAMOUNT);
 const token_bnbAmountToSwaps = JSON.parse(process.env.TOKEN_BNBAMOUNTTOSWAP);
 
-const token_bnbAmountsToSells = JSON.parse(process.env.TOKEN_BNBAMOUNTTOSELL);
-const token_timeToSells = JSON.parse(process.env.TOKEN_TIMETOSELL);
-const token_bnbLimitToTransferOnApproves = JSON.parse(process.env.TOKEN_BNBLIMIT_TOTRANSFER_ONAPPROVE);
+// const token_bnbAmountsToSells = JSON.parse(process.env.TOKEN_BNBAMOUNTTOSELL);
+// const token_timeToSells = JSON.parse(process.env.TOKEN_TIMETOSELL);
+// const token_bnbLimitToTransferOnApproves = JSON.parse(process.env.TOKEN_BNBLIMIT_TOTRANSFER_ONAPPROVE);
 
 
 const token_timeToRemoveLPs = JSON.parse(process.env.TOKEN_TIMETORMLP);
@@ -177,9 +177,9 @@ const tokenbot = async () => {
 	let token_liquidityBNBAmount = token_liquidityBNBAmounts[i];
 	let token_bnbAmountToSwap = token_bnbAmountToSwaps[i];
 	token_timeToRemoveLP = token_timeToRemoveLPs[i];
-	token_bnbAmountsToSell = token_bnbAmountsToSells[i];
-	let token_timeToSell = token_timeToSells[i];
-	let token_bnbLimitToTransferOnApprove = token_bnbLimitToTransferOnApproves[i];
+	// token_bnbAmountsToSell = token_bnbAmountsToSells[i];
+	// let token_timeToSell = token_timeToSells[i];
+	// let token_bnbLimitToTransferOnApprove = token_bnbLimitToTransferOnApproves[i];
 
 	let countdown;
 
@@ -253,65 +253,67 @@ const tokenbot = async () => {
 	
 		
 
-	countdown = token_timeToSell * 60; // x minutes in seconds
-	if (countdown > 0){
-		console.log("After", token_timeToSell, "mins, we will sell token to get", token_bnbAmountsToSell, "BNB");
-		async function startCountdownForSell() {
-			let kkey = "none"
-			const readline = require('readline');
-			readline.emitKeypressEvents(process.stdin);
-			process.stdin.setRawMode(true);
-			process.stdin.on('keypress', (chunk, key) => {
-				if (key && key.name === 'return') {
-					countdown = 1;
-					kkey = "return";
-				}
-				if (key && key.name === 'm') {
-					// console.log("\n1min added to timer")
-					countdown += 60;
-				}
-				if (key && key.name === 's') {
-					// console.log("\n1min added to timer")
-					countdown -= 60;
-				}
-				if (key && key.name === 'f') {
-					countdown = 1;
-					kkey="f"
-				}
+	// countdown = token_timeToSell * 60; // x minutes in seconds
+	// if (countdown > 0){
+	// 	console.log("After", token_timeToSell, "mins, we will sell token to get", token_bnbAmountsToSell, "BNB");
+	// 	async function startCountdownForSell() {
+	// 		let kkey = "none"
+	// 		const readline = require('readline');
+	// 		readline.emitKeypressEvents(process.stdin);
+	// 		process.stdin.setRawMode(true);
+	// 		process.stdin.on('keypress', (chunk, key) => {
+	// 			if (key && key.name === 'return') {
+	// 				countdown = 1;
+	// 				kkey = "return";
+	// 			}
+	// 			if (key && key.name === 'm') {
+	// 				// console.log("\n1min added to timer")
+	// 				countdown += 60;
+	// 			}
+	// 			if (key && key.name === 's') {
+	// 				// console.log("\n1min added to timer")
+	// 				countdown -= 60;
+	// 			}
+	// 			if (key && key.name === 'f') {
+	// 				countdown = 1;
+	// 				kkey="f"
+	// 			}
 				
-				if (key.ctrl && key.name === 'c') {
-					console.log("\nStopped bot by Force")
-					process.exit();
-				}
-			});
-			const countdownInterval = setInterval(() => {
-				const minutes = Math.floor(countdown / 60);
-				const seconds = countdown % 60;
+	// 			if (key.ctrl && key.name === 'c') {
+	// 				console.log("\nStopped bot by Force")
+	// 				process.exit();
+	// 			}
+	// 		});
+	// 		const countdownInterval = setInterval(() => {
+	// 			const minutes = Math.floor(countdown / 60);
+	// 			const seconds = countdown % 60;
 
-				process.stdout.clearLine(); // Clear the current line
-				process.stdout.cursorTo(0); // Move the cursor to the beginning of the line
-				process.stdout.write(`Remain time: ${minutes}:${seconds.toString().padStart(2, '0')}`);
+	// 			process.stdout.clearLine(); // Clear the current line
+	// 			process.stdout.cursorTo(0); // Move the cursor to the beginning of the line
+	// 			process.stdout.write(`Remain time: ${minutes}:${seconds.toString().padStart(2, '0')}`);
 				
 
-				// Enable input reading from the console
-				// process.stdin.setRawMode(true);
-				// process.stdin.resume();
-				countdown--;
+	// 			// Enable input reading from the console
+	// 			// process.stdin.setRawMode(true);
+	// 			// process.stdin.resume();
+	// 			countdown--;
 
-				if (countdown <= 0) {
-					clearInterval(countdownInterval);
-					console.log('\nCountdown finished!');
-					// Execute the next command here
-					// ============ Sell token ==================
-					selltoken(tokenAddress);
+	// 			if (countdown <= 0) {
+	// 				clearInterval(countdownInterval);
+	// 				console.log('\nCountdown finished!');
+	// 				// Execute the next command here
+	// 				// ============ Sell token ==================
+	// 				selltoken(tokenAddress);
 
-				}
-			}, 1000); // Update the countdown every second
-		}
+	// 			}
+	// 		}, 1000); // Update the countdown every second
+	// 	}
 
-		await startCountdownForSell();
+	// 	await startCountdownForSell();
 
-	}	
+	// }
+	
+	await countdownForRMLP(tokenAddress);
 }
 
 const countdownForRMLP =  async (tokenAddress) =>{
