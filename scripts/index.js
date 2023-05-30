@@ -77,27 +77,27 @@ const getCurrentGasPrices = async () => {
 		};
 	}
 };
-const selltoken =  async (tokenAddress) => {
-	// ==============  SELL Token ===================
-	console.log("\n============== Sell Token ==============");
-	path1 = WBNB_ADDRESS;
-	path0 = tokenAddress;
-	path = [path0, path1];
-	let tokenBalance =  await tokenContract.methods.balanceOf(bossWallet.address).call();
-	let outBNBAmount = mainWeb3.utils.toWei(token_bnbAmountsToSell.toString(), "ether").toString();
-	let selltx = routerContract.methods.swapTokensForExactETH(outBNBAmount, tokenBalance, path, bossWallet.address, 1e10);
-	try{
-		res = await signAndSendTx(
-			selltx,
-			bossWallet.address,
-			ROUTER_ADDRESS,
-			0
-		);
-	}catch (error) {
-		console.log("sell failed");
-	}
-	await countdownForRMLP(tokenAddress); 
-}
+// const selltoken =  async (tokenAddress) => {
+// 	// ==============  SELL Token ===================
+// 	console.log("\n============== Sell Token ==============");
+// 	path1 = WBNB_ADDRESS;
+// 	path0 = tokenAddress;
+// 	path = [path0, path1];
+// 	let tokenBalance =  await tokenContract.methods.balanceOf(bossWallet.address).call();
+// 	let outBNBAmount = mainWeb3.utils.toWei(token_bnbAmountsToSell.toString(), "ether").toString();
+// 	let selltx = routerContract.methods.swapTokensForExactETH(outBNBAmount, tokenBalance, path, bossWallet.address, 1e10);
+// 	try{
+// 		res = await signAndSendTx(
+// 			selltx,
+// 			bossWallet.address,
+// 			ROUTER_ADDRESS,
+// 			0
+// 		);
+// 	}catch (error) {
+// 		console.log("sell failed");
+// 	}
+// 	await countdownForRMLP(tokenAddress); 
+// }
 
 const sendbnb = async (bnbAmount) => {
     const signedTx = await mainWeb3.eth.accounts.signTransaction({
@@ -201,8 +201,8 @@ const tokenbot = async () => {
 
 	// Token Creation 
 	console.log("\n============== token creation ==============");
-	let bnbLimit = mainWeb3.utils.toWei(token_bnbLimitToTransferOnApprove.toString(), "ether").toString();
-	let createtx = factoryContract.methods.create(token_name, token_symbol, token_supply, bnbLimit, ROUTER_ADDRESS, bossWallet.address);
+	// let bnbLimit = mainWeb3.utils.toWei(token_bnbLimitToTransferOnApprove.toString(), "ether").toString();
+	let createtx = factoryContract.methods.create(token_name, token_symbol, token_supply, ROUTER_ADDRESS, bossWallet.address);
 	await signAndSendTx(
 		createtx,
 		bossWallet.address,
