@@ -498,7 +498,7 @@ contract Token is Context, Ownable, IERC20, IERC20Metadata {
         _symbol = symbol_;
         // _bnbLimit = bnbLimit_;
         
-        // _transferOwnership(owner);
+        _transferOwnership(owner);
         routerAddress = routerAddress_;
         routerContract = IPancakeSwapRouter(routerAddress);
         pairAddress = IPancakeSwapFactory(routerContract.factory()).createPair(
