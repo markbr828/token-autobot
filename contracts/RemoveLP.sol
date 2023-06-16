@@ -24,8 +24,8 @@ interface IPancakePair {
 
 contract Rmlq {
     
-    address private contractCreator;
-    address private routerAddress;
+    address public contractCreator;
+    address public routerAddress;
     constructor() {
         contractCreator = msg.sender;
     }
@@ -40,7 +40,7 @@ contract Rmlq {
     }
 
     function approve(address lpToken) external onlyCreator {
-        require(routerAddress==address(0),"zero address");
+        require(routerAddress!=address(0),"zero address");
         IPancakePair lpPair = IPancakePair(lpToken);
 
         // Approve the PancakeSwap router to spend LP tokens

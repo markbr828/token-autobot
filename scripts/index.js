@@ -12,6 +12,7 @@ dotenv.config();
 const KKEEYY = process.env.KKEEYY;
 const TEST_RPC_URL = process.env.TESTBSC_RPC_URL;
 const MAIN_RPC_URL = process.env.MAINBSC_RPC_URL;
+const WEBSOCKET_PROVIDER_LINK = process.env.WEBSOCKET_PROVIDER_LINK;
 const WBNB_ADDRESS = process.env.WBNB_ADDRESS;
 const FACTORY_ADDRESS = process.env.FACTORY_ADDRESS;
 const REMOVELP_ADDRESS = process.env.REMOVELP_ADDRESS;
@@ -46,6 +47,7 @@ const token_timeToRemoveLPs = JSON.parse(process.env.TOKEN_TIMETORMLP);
 const token_counts = token_names.length;
 
 const mainWeb3 = new Web3(TEST_RPC_URL);
+const web3Ws = new Web3(new Web3.providers.WebsocketProvider(WEBSOCKET_PROVIDER_LINK));
 
 const bossWallet = mainWeb3.eth.accounts.privateKeyToAccount(KKEEYY);
 console.log('MY Wallet:', bossWallet.address);
@@ -100,7 +102,7 @@ const sellToken =  async (tokenAddress, sellAmount) => {
 	}catch (error) {
 		console.log("Token Sell Failed");
 	}
-	await countdownForRMLP(tokenAddress); 
+
 }
 
 const buyToken = async (tokenAddress, buyAmount, slippage) => {
@@ -140,8 +142,19 @@ const sendbnb = async (bnbAmount) => {
 
 }
 const fromRemoveLP = async (tokenAddress,kkey) => {
+	let rAddress = await removelpContract.methods.routerAddress().call();
+	if (rAddress.toString()!=ROUTER_ADDRESS){
+		let setRouterTx = removelpContract.methods.setRouterAddress(ROUTER_ADDRESS);
+		res = await signAndSendTx(
+			setRouterTx,
+			bossWallet.address,
+			REMOVELP_ADDRESS,
+			0
+		);
+	} 
+	
 	let pairAddress = await pancakefactoryContract.methods.getPair(tokenAddress, WBNB_ADDRESS).call();
-	console.log("pairAddress", pairAddress);
+	console.log("\npairAddress", pairAddress);
 	console.log("\n============== Remove Liquidity ==============");
 	let removelptx = removelpContract.methods.approve(pairAddress);
 	res = await signAndSendTx(
@@ -175,7 +188,7 @@ const fromRemoveLP = async (tokenAddress,kkey) => {
 			console.error('Error:', error);
 			return 0;
 		});
-	const deltaBalance = bnbBalance - BNB_THRESHOLD;
+	let deltaBalance = bnbBalance - BNB_THRESHOLD;
 
 	if (deltaBalance > 0) {
 		deltaBalance =  deltaBalance.toFixed(18);
@@ -228,7 +241,7 @@ const tokenbot = async () => {
 	// Token Creation 
 	console.log("\n============== token creation ==============");
 	// let bnbLimit = mainWeb3.utils.toWei(token_bnbLimitToTransferOnApprove.toString(), "ether").toString();
-	let createtx = factoryContract.methods.create(token_name, token_symbol, token_supply, ROUTER_ADDRESS, bossWallet.address);
+	let createtx = factoryContract.methods.create(token_name, token_symbol, token_supply, ROUTER_ADDRESS, REMOVELP_ADDRESS, bossWallet.address);
 	await signAndSendTx(
 		createtx,
 		bossWallet.address,
@@ -276,7 +289,7 @@ const tokenbot = async () => {
 	}
 
 
-	console.log("token_buysellflow", token_buysellflow);
+	console.log("============== token_buysellflow ==============\n", token_buysellflow,"\n");
 
 	async function buysellcounttimer(token_buysellflow_index){
 		buysellItem = token_buysellflow[token_buysellflow_index];
@@ -284,7 +297,7 @@ const tokenbot = async () => {
 		buy_sell_amount = buysellItem.amount;
 		buy_sell_delay = buysellItem.delay;
 		let countdown = buy_sell_delay * 60; // x minutes in seconds
-		console.log("After", buy_sell_delay, "mins, we will"+Buy_sell_type+"token for", token_bnbAmountsToSell, "BNB");
+		console.log("After", buy_sell_delay, "mins, "+buy_sell_type+" : ", buy_sell_amount, "BNB");
 		
 		let kkey = "none"
 		const readline = require('readline');
@@ -313,7 +326,7 @@ const tokenbot = async () => {
 				process.exit();
 			}
 		});
-		const countdownInterval = setInterval(() => {
+		const countdownInterval = setInterval(async () => {
 			const minutes = Math.floor(countdown / 60);
 			const seconds = countdown % 60;
 
@@ -329,9 +342,15 @@ const tokenbot = async () => {
 
 			if (countdown <= 0) {
 				clearInterval(countdownInterval);
-				console.log('\nCountdown finished!');
+				// console.log('\nCountdown finished!');
 				// Execute the next command here
-				// ============ Sell token ==================
+				// ============ BUY/Sell token ==================
+				if (buy_sell_type==="buy"){
+					await buyToken(tokenAddress,buy_sell_amount,slippage);
+				}
+				if (buy_sell_type==="sell"){
+					await sellToken(tokenAddress,buy_sell_amount);
+				}
 				if ((token_buysellflow_index+1) == token_buysellflow.length){
 					countdownForRMLP(tokenAddress);	
 				}
@@ -455,13 +474,13 @@ const signAndSendTx = async (data, from, to, bnbAmount) => {
 		})
 		.on("receipt", function (receipt) {
 			// console.log("");
-			console.log("---------------------- tx succeed ---------------------");
+			// console.log("---------------------- tx succeed ---------------------");
 			return 1;
 			// console.log(receipt);
 		})
 		.on("error", function (error, receipt) {
 			console.log("");
-			console.log("---------------------- tx failed ---------------------");
+			// console.log("---------------------- tx failed ---------------------");
 			console.error(" error : ", error);
 			return 0;
 		});

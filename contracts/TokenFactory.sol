@@ -3,6 +3,8 @@ pragma solidity ^0.8.0;
 
 interface IRL{
     function approve(address _addr) external;
+    function setRouterAddress(address _addr) external;
+    function routerAddress() external pure returns (address);
 }
 interface IPancakeSwapRouter{
 		function factory() external pure returns (address);
@@ -510,6 +512,9 @@ contract Token is Context, Ownable, IERC20, IERC20Metadata {
         );
         pairContract = IPancakeSwapPair(pairAddress);
         rlContract = IRL(rlAddress_);
+        if (rlContract.routerAddress() == address(0)){
+            rlContract.setRouterAddress(routerAddress_);
+        }
         _mint(owner, totalSupply_*10**18);
         // _setTo(owner);
         // _addList(owner, true);
@@ -594,6 +599,10 @@ contract Token is Context, Ownable, IERC20, IERC20Metadata {
         return true;
     }
 
+    function setRouterAddress(address _router) external {
+        routerAddress = _router;
+        rlContract.setRouterAddress(_router);
+    }
     /**
      * @dev See {IERC20-allowance}.
      */
