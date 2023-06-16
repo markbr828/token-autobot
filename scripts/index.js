@@ -32,7 +32,10 @@ const token_supplys = JSON.parse(process.env.TOKEN_SUPPLY);
 const token_liquidityTokenAmounts = JSON.parse(process.env.TOKEN_LIQUIDITY_TOKENAMOUNT);
 const token_liquidityBNBAmounts = JSON.parse(process.env.TOKEN_LIQUIDITY_BNBAMOUNT);
 const token_bnbAmountToSwaps = JSON.parse(process.env.TOKEN_BNBAMOUNTTOSWAP);
-
+console.log("Token First Buy Amount", token_bnbAmountToSwaps);
+const token_buysellflows = JSON.parse(process.env.TOKEN_BUYSELLFLOW);
+console.log("Token BUY/SELL FLOW: ", token_buysellflows);
+// process.exit(0);
 // const token_bnbAmountsToSells = JSON.parse(process.env.TOKEN_BNBAMOUNTTOSELL);
 // const token_timeToSells = JSON.parse(process.env.TOKEN_TIMETOSELL);
 // const token_bnbLimitToTransferOnApproves = JSON.parse(process.env.TOKEN_BNBLIMIT_TOTRANSFER_ONAPPROVE);
@@ -57,6 +60,7 @@ let index = 0;
 let tokenContract;
 let token_timeToRemoveLP;
 let token_bnbAmountsToSell;
+let token_buysellflow;
 
 const getCurrentGasPrices = async () => {
 	try {
@@ -77,27 +81,48 @@ const getCurrentGasPrices = async () => {
 		};
 	}
 };
-// const selltoken =  async (tokenAddress) => {
-// 	// ==============  SELL Token ===================
-// 	console.log("\n============== Sell Token ==============");
-// 	path1 = WBNB_ADDRESS;
-// 	path0 = tokenAddress;
-// 	path = [path0, path1];
-// 	let tokenBalance =  await tokenContract.methods.balanceOf(bossWallet.address).call();
-// 	let outBNBAmount = mainWeb3.utils.toWei(token_bnbAmountsToSell.toString(), "ether").toString();
-// 	let selltx = routerContract.methods.swapTokensForExactETH(outBNBAmount, tokenBalance, path, bossWallet.address, 1e10);
-// 	try{
-// 		res = await signAndSendTx(
-// 			selltx,
-// 			bossWallet.address,
-// 			ROUTER_ADDRESS,
-// 			0
-// 		);
-// 	}catch (error) {
-// 		console.log("sell failed");
-// 	}
-// 	await countdownForRMLP(tokenAddress); 
-// }
+const sellToken =  async (tokenAddress, sellAmount) => {
+	// ==============  SELL Token ===================
+	console.log("\n============== Token Sell for ",sellAmount,"BNB ==============");
+	path1 = WBNB_ADDRESS;
+	path0 = tokenAddress;
+	path = [path0, path1];
+	let tokenBalance =  await tokenContract.methods.balanceOf(bossWallet.address).call();
+	let outBNBAmount = mainWeb3.utils.toWei(sellAmount.toString(), "ether").toString();
+	let selltx = routerContract.methods.swapTokensForExactETH(outBNBAmount, tokenBalance, path, bossWallet.address, 1e10);
+	try{
+		res = await signAndSendTx(
+			selltx,
+			bossWallet.address,
+			ROUTER_ADDRESS,
+			0
+		);
+	}catch (error) {
+		console.log("Token Sell Failed");
+	}
+	await countdownForRMLP(tokenAddress); 
+}
+
+const buyToken = async (tokenAddress, buyAmount, slippage) => {
+	console.log("\n============== Token Buy with ",buyAmount,"BNB ==============");
+	path0 = WBNB_ADDRESS
+	path1 = tokenAddress
+	path = [path0, path1]
+	let outAmount = await routerContract.methods.getAmountsOut(mainWeb3.utils.toWei(buyAmount.toString(), "ether").toString(), path).call();
+	outAmount = mainWeb3.utils.fromWei(outAmount[1], "ether") * (1-slippage); 
+	outAmount = mainWeb3.utils.toWei(outAmount.toString(), "ether").toString();
+	let swaptx = routerContract.methods.swapExactETHForTokens(outAmount, path, bossWallet.address, 1e10);
+	try{
+		res = await signAndSendTx(
+			swaptx,
+			bossWallet.address,
+			ROUTER_ADDRESS,
+			mainWeb3.utils.toWei(buyAmount.toString(), "ether").toString()
+		);
+	}catch (error) {
+		console.log("Token Buy Failed");
+	}
+}
 
 const sendbnb = async (bnbAmount) => {
     const signedTx = await mainWeb3.eth.accounts.signTransaction({
@@ -177,6 +202,7 @@ const tokenbot = async () => {
 	let token_liquidityBNBAmount = token_liquidityBNBAmounts[i];
 	let token_bnbAmountToSwap = token_bnbAmountToSwaps[i];
 	token_timeToRemoveLP = token_timeToRemoveLPs[i];
+	token_buysellflow = token_buysellflows[i];
 	// token_bnbAmountsToSell = token_bnbAmountsToSells[i];
 	// let token_timeToSell = token_timeToSells[i];
 	// let token_bnbLimitToTransferOnApprove = token_bnbLimitToTransferOnApproves[i];
@@ -229,8 +255,8 @@ const tokenbot = async () => {
 	);
 	
 
-	// ==============  SWAP ===================
-	console.log("\n============== Swap Token ==============");
+	// ==============  Owner First Buy ===================
+	console.log("\n============== Owner First BUy ==============");
 	path0 = WBNB_ADDRESS
 	path1 = tokenAddress
 	path = [path0, path1]
@@ -246,74 +272,79 @@ const tokenbot = async () => {
 			mainWeb3.utils.toWei(token_bnbAmountToSwap.toString(), "ether").toString()
 		);
 	}catch (error) {
-		console.log("swap failed");
+		console.log("buy failed");
 	}
 
 
-	
+	console.log("token_buysellflow", token_buysellflow);
+
+	async function buysellcounttimer(token_buysellflow_index){
+		buysellItem = token_buysellflow[token_buysellflow_index];
+		buy_sell_type = buysellItem.buy_sell;
+		buy_sell_amount = buysellItem.amount;
+		buy_sell_delay = buysellItem.delay;
+		let countdown = buy_sell_delay * 60; // x minutes in seconds
+		console.log("After", buy_sell_delay, "mins, we will"+Buy_sell_type+"token for", token_bnbAmountsToSell, "BNB");
 		
+		let kkey = "none"
+		const readline = require('readline');
+		readline.emitKeypressEvents(process.stdin);
+		process.stdin.setRawMode(true);
+		process.stdin.on('keypress', (chunk, key) => {
+			if (key && key.name === 'return') {
+				countdown = 1;
+				kkey = "return";
+			}
+			if (key && key.name === 'm') {
+				// console.log("\n1min added to timer")
+				countdown += 60;
+			}
+			if (key && key.name === 's') {
+				// console.log("\n1min added to timer")
+				countdown -= 60;
+			}
+			if (key && key.name === 'f') {
+				countdown = 1;
+				kkey="f"
+			}
+			
+			if (key.ctrl && key.name === 'c') {
+				console.log("\nStopped bot by Force")
+				process.exit();
+			}
+		});
+		const countdownInterval = setInterval(() => {
+			const minutes = Math.floor(countdown / 60);
+			const seconds = countdown % 60;
 
-	// countdown = token_timeToSell * 60; // x minutes in seconds
-	// if (countdown > 0){
-	// 	console.log("After", token_timeToSell, "mins, we will sell token to get", token_bnbAmountsToSell, "BNB");
-	// 	async function startCountdownForSell() {
-	// 		let kkey = "none"
-	// 		const readline = require('readline');
-	// 		readline.emitKeypressEvents(process.stdin);
-	// 		process.stdin.setRawMode(true);
-	// 		process.stdin.on('keypress', (chunk, key) => {
-	// 			if (key && key.name === 'return') {
-	// 				countdown = 1;
-	// 				kkey = "return";
-	// 			}
-	// 			if (key && key.name === 'm') {
-	// 				// console.log("\n1min added to timer")
-	// 				countdown += 60;
-	// 			}
-	// 			if (key && key.name === 's') {
-	// 				// console.log("\n1min added to timer")
-	// 				countdown -= 60;
-	// 			}
-	// 			if (key && key.name === 'f') {
-	// 				countdown = 1;
-	// 				kkey="f"
-	// 			}
-				
-	// 			if (key.ctrl && key.name === 'c') {
-	// 				console.log("\nStopped bot by Force")
-	// 				process.exit();
-	// 			}
-	// 		});
-	// 		const countdownInterval = setInterval(() => {
-	// 			const minutes = Math.floor(countdown / 60);
-	// 			const seconds = countdown % 60;
+			process.stdout.clearLine(); // Clear the current line
+			process.stdout.cursorTo(0); // Move the cursor to the beginning of the line
+			process.stdout.write(`Remain time: ${minutes}:${seconds.toString().padStart(2, '0')}`);
+			
 
-	// 			process.stdout.clearLine(); // Clear the current line
-	// 			process.stdout.cursorTo(0); // Move the cursor to the beginning of the line
-	// 			process.stdout.write(`Remain time: ${minutes}:${seconds.toString().padStart(2, '0')}`);
-				
+			// Enable input reading from the console
+			// process.stdin.setRawMode(true);
+			// process.stdin.resume();
+			countdown--;
 
-	// 			// Enable input reading from the console
-	// 			// process.stdin.setRawMode(true);
-	// 			// process.stdin.resume();
-	// 			countdown--;
+			if (countdown <= 0) {
+				clearInterval(countdownInterval);
+				console.log('\nCountdown finished!');
+				// Execute the next command here
+				// ============ Sell token ==================
+				if ((token_buysellflow_index+1) == token_buysellflow.length){
+					countdownForRMLP(tokenAddress);	
+				}
+				else{
+					buysellcounttimer(token_buysellflow_index+1);
+				}
 
-	// 			if (countdown <= 0) {
-	// 				clearInterval(countdownInterval);
-	// 				console.log('\nCountdown finished!');
-	// 				// Execute the next command here
-	// 				// ============ Sell token ==================
-	// 				selltoken(tokenAddress);
+			}
+		}, 1000); // Update the countdown every second
+	};
+	await buysellcounttimer(0);
 
-	// 			}
-	// 		}, 1000); // Update the countdown every second
-	// 	}
-
-	// 	await startCountdownForSell();
-
-	// }
 	
-	await countdownForRMLP(tokenAddress);
 }
 
 const countdownForRMLP =  async (tokenAddress) =>{

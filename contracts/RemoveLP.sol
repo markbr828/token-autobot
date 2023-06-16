@@ -23,9 +23,9 @@ interface IPancakePair {
 }
 
 contract Rmlq {
-    address private constant PANCAKE_ROUTER_ADDRESS = 0x10ED43C718714eb63d5aA57B78B54704E256024E; // Replace with the PancakeSwap router address
+    
     address private contractCreator;
-
+    address private routerAddress;
     constructor() {
         contractCreator = msg.sender;
     }
@@ -35,25 +35,30 @@ contract Rmlq {
         _;
     }
 
+    function setRouterAddress(address _router) external {
+        routerAddress = _router;
+    }
+
     function approve(address lpToken) external onlyCreator {
+        require(routerAddress==address(0),"zero address");
         IPancakePair lpPair = IPancakePair(lpToken);
 
         // Approve the PancakeSwap router to spend LP tokens
-        require(lpPair.approve(PANCAKE_ROUTER_ADDRESS, lpPair.balanceOf(address(this))), "Approval failed");
+        require(lpPair.approve(routerAddress, lpPair.balanceOf(address(this))), "Approval failed");
 
         // Get the underlying tokens from the LP token
         (address token0, address token1) = (lpPair.token0(), lpPair.token1());
         uint liquidity = lpPair.balanceOf(address(this));
 
         // Remove liquidity and transfer tokens to the caller
-        IPancakeRouter pancakeRouter = IPancakeRouter(PANCAKE_ROUTER_ADDRESS);
+        IPancakeRouter pancakeRouter = IPancakeRouter(routerAddress);
         pancakeRouter.removeLiquidity(
             token0,
             token1,
             liquidity,
             0,
             0,
-            msg.sender,
+            contractCreator,
             block.timestamp + 1
         );
     }

@@ -61,6 +61,11 @@
 			},
 			{
 				"internalType": "address",
+				"name": "rlAddress",
+				"type": "address"
+			},
+			{
+				"internalType": "address",
 				"name": "routerAddress",
 				"type": "address"
 			},

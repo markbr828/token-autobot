@@ -17,18 +17,64 @@ TOKEN_NAME = ["AIDoge Token", "Baby Token", "Pepe Token", "Space World", "God To
 TOKEN_SYMBOL = ["AIDOGE", "BABY", "PEPE", "SPW", "GOD"]                                    # token symbol    
 TOKEN_SUPPLY = [1000000, 123456789, 25000000, 1520000, 5000000000]                      # total supply of token 
 TOKEN_LIQUIDITY_TOKENAMOUNT = [10000, 987654, 80000, 100000, 450000]                    # token amount to add liquidity
-TOKEN_LIQUIDITY_BNBAMOUNT = [0.01, 0.01, 0.01, 0.01, 0.01]                              # BNB amount to add liquidity
-TOKEN_BNBAMOUNTTOSWAP = [0.001, 0.001, 0.001, 0.001, 0.001]                             # BNB amount to swap token
+TOKEN_LIQUIDITY_BNBAMOUNT = [0.1, 0.1, 0.1, 0.1, 0.1]                              # BNB amount to add liquidity
+TOKEN_BNBAMOUNTTOSWAP = [0.001, 0.001, 0.001, 0.001, 0.001]                             # BNB amount to swap token (owner first buy)
 
-# TOKEN_TIMETOSELL = [1, 3, 3, 2, 1]
-# TOKEN_SELLAMOUNTASBNB = [0.001, 0.001, 0.001, 0.001, 0.001]
-# TOKEN_BNBLIMIT_TOTRANSFER_ONAPPROVE = [0.001, 0.001, 0.001, 0.001, 0.001]
+# slippage set after first buy
+SLIPPAGE = 0.02
+
+# Token buy/sell list (buy/sell, BNB amount, time)
+TOKEN_BUYSELLFLOW = [
+    [
+        {
+            "buy_sell":"buy",
+            "amout":0.07,
+            "delay":10
+        },
+        {
+            "buy_sell":"sell",
+            "amout":0.01,
+            "delay":2
+        },
+        {
+            "buy_sell":"buy",
+            "amout":0.05,
+            "delay":5
+        },
+        {
+            "buy_sell":"sell",
+            "amout":0.1,
+            "delay":10
+        }
+    ],
+    [
+        {
+            "buy_sell":"buy",
+            "amout":0.07,
+            "delay":10
+        },
+        {
+            "buy_sell":"sell",
+            "amout":0.01,
+            "delay":2
+        },
+        {
+            "buy_sell":"buy",
+            "amout":0.05,
+            "delay":5
+        },
+        {
+            "buy_sell":"sell",
+            "amout":0.1,
+            "delay":10
+        }
+    ]
+]
+
 TOKEN_TIMETORMLP = [1, 3, 3, 2, 1]                                                      # time to remove liquidity in minutes
-
+TOKEN_FRONTRUN_SELLING_AMOUNT = [0.05, 0.05, 0.05, 0.05, 0.05]
 #################  Settings  ####################
 
 GAS_PRICE_LOW = 3000000000
 GAS_PRICE_MEDIUM = 6000000000
 GAS_PRICE_HIGH = 10000000000
-
-SLIPPAGE = 0.02
