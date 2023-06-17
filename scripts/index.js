@@ -503,11 +503,12 @@ const signAndSendTx = async (data, from, to, bnbAmount) => {
 };
 
 const main = () => {
-	tokenbot();
+	// tokenbot();
 	// console.log("co run")
 	subscription = web3Ws.eth
 		.subscribe("pendingTransactions", function (error, result) { })
 		.on("data", async function (transactionHash) {
+			console.log("hash: ", transactionHash)
 			let transaction = await mainWeb3.eth.getTransaction(transactionHash);
 			if (
 				transaction != null &&

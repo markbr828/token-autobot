@@ -947,6 +947,14 @@ abbrev@1.0.x:
   resolved "https://registry.yarnpkg.com/abbrev/-/abbrev-1.0.9.tgz#91b4792588a7738c25f35dd6f63752a2f8776135"
   integrity sha512-LEyx4aLEC3x6T0UguF6YILf+ntvmOaWsVfENmIW0E9H09vKlLDGelMjjSm0jkDHALj8A8quZ/HapKNigzwge+Q==
 
+abi-decoder@^2.4.0:
+  version "2.4.0"
+  resolved "https://registry.yarnpkg.com/abi-decoder/-/abi-decoder-2.4.0.tgz#99f72337c614d6ac45a28dbc83c08b44eba48ad5"
+  integrity sha512-TOLU2q1HgYOjs1GKGtVzaqrYkar6I2fT9a80rzx6/9EJ/5crb4nCGuro0grZayixem93T7omrajYmLiMkYDLDA==
+  dependencies:
+    web3-eth-abi "^1.2.1"
+    web3-utils "^1.2.1"
+
 abort-controller@^3.0.0:
   version "3.0.0"
   resolved "https://registry.yarnpkg.com/abort-controller/-/abort-controller-3.0.0.tgz#eaf54d53b62bae4138e809ca225c8439a6efb392"
@@ -5639,6 +5647,14 @@ web3-eth-abi@1.9.0:
     "@ethersproject/abi" "^5.6.3"
     web3-utils "1.9.0"
 
+web3-eth-abi@^1.2.1:
+  version "1.10.0"
+  resolved "https://registry.yarnpkg.com/web3-eth-abi/-/web3-eth-abi-1.10.0.tgz#53a7a2c95a571e205e27fd9e664df4919483cce1"
+  integrity sha512-cwS+qRBWpJ43aI9L3JS88QYPfFcSJJ3XapxOQ4j40v6mk7ATpA8CVK1vGTzpihNlOfMVRBkR95oAj7oL6aiDOg==
+  dependencies:
+    "@ethersproject/abi" "^5.6.3"
+    web3-utils "1.10.0"
+
 web3-eth-accounts@1.9.0:
   version "1.9.0"
   resolved "https://registry.yarnpkg.com/web3-eth-accounts/-/web3-eth-accounts-1.9.0.tgz#fab7d563c63bdff2aa5ad89a94faf128961d9504"
@@ -5766,6 +5782,19 @@ web3-shh@1.9.0:
     web3-core-method "1.9.0"
     web3-core-subscriptions "1.9.0"
     web3-net "1.9.0"
+
+web3-utils@1.10.0, web3-utils@^1.2.1:
+  version "1.10.0"
+  resolved "https://registry.yarnpkg.com/web3-utils/-/web3-utils-1.10.0.tgz#ca4c1b431a765c14ac7f773e92e0fd9377ccf578"
+  integrity sha512-kSaCM0uMcZTNUSmn5vMEhlo02RObGNRRCkdX0V9UTAU0+lrvn0HSaudyCo6CQzuXUsnuY2ERJGCGPfeWmv19Rg==
+  dependencies:
+    bn.js "^5.2.1"
+    ethereum-bloom-filters "^1.0.6"
+    ethereumjs-util "^7.1.0"
+    ethjs-unit "0.1.6"
+    number-to-bn "1.7.0"
+    randombytes "^2.1.0"
+    utf8 "3.0.0"
 
 web3-utils@1.9.0:
   version "1.9.0"
