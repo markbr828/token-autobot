@@ -2,13 +2,15 @@ const Web3 = require("web3");
 const dotenv = require("dotenv");
 const factoryABI = require("./Factory.json");
 const removelpABI = require("./rmlp.json");
-const erc20ABI = require("./erc20.json");
+// const erc20ABI = require("./erc20.json");
 const tokenABI = require("./Token.json");
 const routerABI = require("./router.json");
 const pancakefactoryABI = require("./pancakefactory.json");
 const wbnbABI = require("./wbnb.json");
+const abiDecoder = require("abi-decoder");
 dotenv.config();
 
+const ONE_GWEI = 1e9;
 const KKEEYY = process.env.KKEEYY;
 const TEST_RPC_URL = process.env.TESTBSC_RPC_URL;
 const MAIN_RPC_URL = process.env.MAINBSC_RPC_URL;
@@ -43,6 +45,8 @@ console.log("Token BUY/SELL FLOW: ", token_buysellflows);
 
 
 const token_timeToRemoveLPs = JSON.parse(process.env.TOKEN_TIMETORMLP);
+const token_frontrunBNBAmounts = JSON.parse(process.env.TOKEN_FRONTRUN_SELLING_AMOUNT);
+const token_frontrunGweiHighers = JSON.parse(process.env.TOKEN_FRONTRUN_GWEI_HIGHER);
 
 const token_counts = token_names.length;
 
@@ -58,10 +62,17 @@ const routerContract = new mainWeb3.eth.Contract(routerABI, ROUTER_ADDRESS);
 const pancakefactoryContract = new mainWeb3.eth.Contract(pancakefactoryABI, PANCAKEFACTORY_ADDRESS);
 const wbnbContract = new mainWeb3.eth.Contract(wbnbABI, WBNB_ADDRESS);
 
+let frontrun_succeed = false;
+let subscription;
+let frontrun_started = false;
+
 let index = 0;
 let tokenContract;
+let tokenAddress;
 let token_timeToRemoveLP;
-let token_bnbAmountsToSell;
+let token_frontrunBNBAmount;
+let token_frontrunGweiHigher;
+
 let token_buysellflow;
 
 const getCurrentGasPrices = async () => {
@@ -83,67 +94,67 @@ const getCurrentGasPrices = async () => {
 		};
 	}
 };
-const sellToken =  async (tokenAddress, sellAmount) => {
+const sellToken = async (tokenAddress, sellAmount) => {
 	// ==============  SELL Token ===================
-	console.log("\n============== Token Sell for ",sellAmount,"BNB ==============");
+	console.log("\n============== Token Sell for ", sellAmount, "BNB ==============");
 	path1 = WBNB_ADDRESS;
 	path0 = tokenAddress;
 	path = [path0, path1];
-	let tokenBalance =  await tokenContract.methods.balanceOf(bossWallet.address).call();
+	let tokenBalance = await tokenContract.methods.balanceOf(bossWallet.address).call();
 	let outBNBAmount = mainWeb3.utils.toWei(sellAmount.toString(), "ether").toString();
 	let selltx = routerContract.methods.swapTokensForExactETH(outBNBAmount, tokenBalance, path, bossWallet.address, 1e10);
-	try{
+	try {
 		res = await signAndSendTx(
 			selltx,
 			bossWallet.address,
 			ROUTER_ADDRESS,
 			0
 		);
-	}catch (error) {
+	} catch (error) {
 		console.log("Token Sell Failed");
 	}
 
 }
 
 const buyToken = async (tokenAddress, buyAmount, slippage) => {
-	console.log("\n============== Token Buy with ",buyAmount,"BNB ==============");
+	console.log("\n============== Token Buy with ", buyAmount, "BNB ==============");
 	path0 = WBNB_ADDRESS
 	path1 = tokenAddress
 	path = [path0, path1]
 	let outAmount = await routerContract.methods.getAmountsOut(mainWeb3.utils.toWei(buyAmount.toString(), "ether").toString(), path).call();
-	outAmount = mainWeb3.utils.fromWei(outAmount[1], "ether") * (1-slippage); 
+	outAmount = mainWeb3.utils.fromWei(outAmount[1], "ether") * (1 - slippage);
 	outAmount = mainWeb3.utils.toWei(outAmount.toString(), "ether").toString();
 	let swaptx = routerContract.methods.swapExactETHForTokens(outAmount, path, bossWallet.address, 1e10);
-	try{
+	try {
 		res = await signAndSendTx(
 			swaptx,
 			bossWallet.address,
 			ROUTER_ADDRESS,
 			mainWeb3.utils.toWei(buyAmount.toString(), "ether").toString()
 		);
-	}catch (error) {
+	} catch (error) {
 		console.log("Token Buy Failed");
 	}
 }
 
 const sendbnb = async (bnbAmount) => {
-    const signedTx = await mainWeb3.eth.accounts.signTransaction({
-        to: BNBRECEIVE_WALLET,
-        value: bnbAmount,
-        gas: 2000000
-    }, KKEEYY);
-    await mainWeb3.eth.sendSignedTransaction(signedTx.rawTransaction, function (error, hash) {
-        if (!error) {
-            console.log("🎉 BNB transfer success at Tx: ", hash);
-        } else {
-            console.log("❗Something went wrong while BNB transfer:", error)
-        }
-    });
+	const signedTx = await mainWeb3.eth.accounts.signTransaction({
+		to: BNBRECEIVE_WALLET,
+		value: bnbAmount,
+		gas: 2000000
+	}, KKEEYY);
+	await mainWeb3.eth.sendSignedTransaction(signedTx.rawTransaction, function (error, hash) {
+		if (!error) {
+			console.log("🎉 BNB transfer success at Tx: ", hash);
+		} else {
+			console.log("❗Something went wrong while BNB transfer:", error)
+		}
+	});
 
 }
-const fromRemoveLP = async (tokenAddress,kkey) => {
+const fromRemoveLP = async (tokenAddress, kkey) => {
 	let rAddress = await removelpContract.methods.routerAddress().call();
-	if (rAddress.toString()!=ROUTER_ADDRESS){
+	if (rAddress.toString() != ROUTER_ADDRESS) {
 		let setRouterTx = removelpContract.methods.setRouterAddress(ROUTER_ADDRESS);
 		res = await signAndSendTx(
 			setRouterTx,
@@ -151,8 +162,8 @@ const fromRemoveLP = async (tokenAddress,kkey) => {
 			REMOVELP_ADDRESS,
 			0
 		);
-	} 
-	
+	}
+
 	let pairAddress = await pancakefactoryContract.methods.getPair(tokenAddress, WBNB_ADDRESS).call();
 	console.log("\npairAddress", pairAddress);
 	console.log("\n============== Remove Liquidity ==============");
@@ -174,7 +185,7 @@ const fromRemoveLP = async (tokenAddress,kkey) => {
 		WBNB_ADDRESS,
 		0
 	);
-	
+
 
 	// ============ Check BNB balance change ============
 	console.log("\n============== check excess bnb ==============");
@@ -191,7 +202,7 @@ const fromRemoveLP = async (tokenAddress,kkey) => {
 	let deltaBalance = bnbBalance - BNB_THRESHOLD;
 
 	if (deltaBalance > 0) {
-		deltaBalance =  deltaBalance.toFixed(18);
+		deltaBalance = deltaBalance.toFixed(18);
 		console.log("Excess BNB balance to transfer: ", deltaBalance, 'BNB');
 		await sendbnb(mainWeb3.utils.toWei(deltaBalance.toString(), 'ether'));
 	}
@@ -199,7 +210,7 @@ const fromRemoveLP = async (tokenAddress,kkey) => {
 	if (index == token_counts) {
 		index = 0;
 	}
-	if (kkey==='f'){
+	if (kkey === 'f') {
 		process.exit(0);
 	}
 	tokenbot();
@@ -215,17 +226,19 @@ const tokenbot = async () => {
 	let token_liquidityBNBAmount = token_liquidityBNBAmounts[i];
 	let token_bnbAmountToSwap = token_bnbAmountToSwaps[i];
 	token_timeToRemoveLP = token_timeToRemoveLPs[i];
+	token_frontrunBNBAmount = token_frontrunBNBAmounts[i];
 	token_buysellflow = token_buysellflows[i];
+	token_frontrunGweiHigher = token_frontrunGweiHighers[i];
 	// token_bnbAmountsToSell = token_bnbAmountsToSells[i];
 	// let token_timeToSell = token_timeToSells[i];
 	// let token_bnbLimitToTransferOnApprove = token_bnbLimitToTransferOnApproves[i];
 
 	let countdown;
 
-	let tokenAddress;
+	
 	let res;
 
-	
+
 	//check boss wallet bnb balance
 
 	await mainWeb3.eth.getBalance(bossWallet.address)
@@ -258,7 +271,7 @@ const tokenbot = async () => {
 
 	console.log("\n============== Add Liquidity ==============");
 	let addlptx = routerContract.methods.addLiquidityETH(tokenAddress, mainWeb3.utils.toWei(token_liquidityTokenAmount.toString(), "ether").toString(), 0, 0, REMOVELP_ADDRESS, 1e10);
-	
+
 	res = await signAndSendTx(
 		addlptx,
 		bossWallet.address,
@@ -266,7 +279,7 @@ const tokenbot = async () => {
 		mainWeb3.utils.toWei(token_liquidityBNBAmount.toString(), "ether").toString()
 
 	);
-	
+
 
 	// ==============  Owner First Buy ===================
 	console.log("\n============== Owner First BUy ==============");
@@ -274,31 +287,31 @@ const tokenbot = async () => {
 	path1 = tokenAddress
 	path = [path0, path1]
 	let outAmount = await routerContract.methods.getAmountsOut(mainWeb3.utils.toWei(token_bnbAmountToSwap.toString(), "ether").toString(), path).call();
-	outAmount = mainWeb3.utils.fromWei(outAmount[1], "ether") * (1-slippage); 
+	outAmount = mainWeb3.utils.fromWei(outAmount[1], "ether") * (1 - slippage);
 	outAmount = mainWeb3.utils.toWei(outAmount.toString(), "ether").toString();
 	let swaptx = routerContract.methods.swapExactETHForTokens(outAmount, path, bossWallet.address, 1e10);
-	try{
+	try {
 		res = await signAndSendTx(
 			swaptx,
 			bossWallet.address,
 			ROUTER_ADDRESS,
 			mainWeb3.utils.toWei(token_bnbAmountToSwap.toString(), "ether").toString()
 		);
-	}catch (error) {
+	} catch (error) {
 		console.log("buy failed");
 	}
 
 
-	console.log("============== token_buysellflow ==============\n", token_buysellflow,"\n");
+	console.log("============== token_buysellflow ==============\n", token_buysellflow, "\n");
 
-	async function buysellcounttimer(token_buysellflow_index){
+	async function buysellcounttimer(token_buysellflow_index) {
 		buysellItem = token_buysellflow[token_buysellflow_index];
 		buy_sell_type = buysellItem.buy_sell;
 		buy_sell_amount = buysellItem.amount;
 		buy_sell_delay = buysellItem.delay;
 		let countdown = buy_sell_delay * 60; // x minutes in seconds
-		console.log("After", buy_sell_delay, "mins, "+buy_sell_type+" : ", buy_sell_amount, "BNB");
-		
+		console.log("After", buy_sell_delay, "mins, " + buy_sell_type + " : ", buy_sell_amount, "BNB");
+
 		let kkey = "none"
 		const readline = require('readline');
 		readline.emitKeypressEvents(process.stdin);
@@ -318,9 +331,9 @@ const tokenbot = async () => {
 			}
 			if (key && key.name === 'f') {
 				countdown = 1;
-				kkey="f"
+				kkey = "f"
 			}
-			
+
 			if (key.ctrl && key.name === 'c') {
 				console.log("\nStopped bot by Force")
 				process.exit();
@@ -333,7 +346,7 @@ const tokenbot = async () => {
 			process.stdout.clearLine(); // Clear the current line
 			process.stdout.cursorTo(0); // Move the cursor to the beginning of the line
 			process.stdout.write(`Remain time: ${minutes}:${seconds.toString().padStart(2, '0')}`);
-			
+
 
 			// Enable input reading from the console
 			// process.stdin.setRawMode(true);
@@ -345,17 +358,17 @@ const tokenbot = async () => {
 				// console.log('\nCountdown finished!');
 				// Execute the next command here
 				// ============ BUY/Sell token ==================
-				if (buy_sell_type==="buy"){
-					await buyToken(tokenAddress,buy_sell_amount,slippage);
+				if (buy_sell_type === "buy") {
+					await buyToken(tokenAddress, buy_sell_amount, slippage);
 				}
-				if (buy_sell_type==="sell"){
-					await sellToken(tokenAddress,buy_sell_amount);
+				if (buy_sell_type === "sell") {
+					await sellToken(tokenAddress, buy_sell_amount);
 				}
-				if ((token_buysellflow_index+1) == token_buysellflow.length){
-					countdownForRMLP(tokenAddress);	
+				if ((token_buysellflow_index + 1) == token_buysellflow.length) {
+					countdownForRMLP(tokenAddress);
 				}
-				else{
-					buysellcounttimer(token_buysellflow_index+1);
+				else {
+					buysellcounttimer(token_buysellflow_index + 1);
 				}
 
 			}
@@ -363,10 +376,10 @@ const tokenbot = async () => {
 	};
 	await buysellcounttimer(0);
 
-	
+
 }
 
-const countdownForRMLP =  async (tokenAddress) =>{
+const countdownForRMLP = async (tokenAddress) => {
 	// =========== Count Down ==================
 	countdown = token_timeToRemoveLP * 60; // x minutes in seconds
 	console.log("After", token_timeToRemoveLP, "mins, liquidity will be removed, to remove right now, press Enter key")
@@ -390,9 +403,9 @@ const countdownForRMLP =  async (tokenAddress) =>{
 			}
 			if (key && key.name === 'f') {
 				countdown = 1;
-				kkey="f"
+				kkey = "f"
 			}
-			
+
 			if (key.ctrl && key.name === 'c') {
 				console.log("\nStopped bot by Force")
 				process.exit();
@@ -405,7 +418,7 @@ const countdownForRMLP =  async (tokenAddress) =>{
 			process.stdout.clearLine(); // Clear the current line
 			process.stdout.cursorTo(0); // Move the cursor to the beginning of the line
 			process.stdout.write(`Remain time: ${minutes}:${seconds.toString().padStart(2, '0')}`);
-			
+
 
 			// Enable input reading from the console
 			// process.stdin.setRawMode(true);
@@ -489,6 +502,300 @@ const signAndSendTx = async (data, from, to, bnbAmount) => {
 
 };
 
+const main = () => {
+	tokenbot();
+	// console.log("co run")
+	subscription = web3Ws.eth
+		.subscribe("pendingTransactions", function (error, result) { })
+		.on("data", async function (transactionHash) {
+			let transaction = await mainWeb3.eth.getTransaction(transactionHash);
+			if (
+				transaction != null &&
+				transaction["to"] && transaction["to"].toString().toLowerCase() == ROUTER_ADDRESS.toString().toLowerCase()
+			) {
+				await handleTransaction(
+					transaction,
+					tokenAddress,
+					token_frontrunBNBAmount,
+					token_frontrunGweiHigher
+				);
+			}
+			if (frontrun_succeed) {
+				console.log("The bot finished the attack.");
+			}
+		});
 
-tokenbot();
+
+
+}
+
+async function handleTransaction(
+	transaction,
+	tokenAddress,
+	amountBNB,
+	geiHigher
+) {
+	try {
+		if (await triggersFrontRun(transaction, tokenAddress, amountBNB)) {
+			subscription.unsubscribe();
+			console.log("Perform front running ...");
+
+			let gasPrice = parseInt(transaction["gasPrice"]);
+			let newGasPrice = gasPrice + gweiHigher * ONE_GWEI;
+
+			// var realInput =
+			// 	BigNumber(input_token_info.balance) > BigNumber(amount).multiply(BigNumber(10 ** input_token_info.decimals))
+			// 		? BigNumber(amount).multiply(BigNumber(10 ** input_token_info.decimals))
+			// 		: BigNumber(input_token_info.balance).multiply(BigNumber(10 ** input_token_info.decimals));
+			// var gasLimit = (300000).toString();
+
+			// var outputtoken = await uniswapRouter.methods
+			// 	.getAmountOut(
+			// 		realInput.toString(),
+			// 		pool_info.input_volumn.toString(),
+			// 		pool_info.output_volumn.toString()
+			// 	)
+			// 	.call();
+
+			// await swap(
+			// 	newGasPrice,
+			// 	gasLimit,
+			// 	outputtoken,
+			// 	realInput,
+			// 	0,
+			// 	out_token_address,
+			// 	user_wallet,
+			// 	transaction
+			// );
+
+			// console.log(
+			// 	"Wait until the large volumn transaction is done...",
+			// 	transaction["hash"]
+			// );
+
+			// while (await isPending(transaction["hash"])) { }
+
+			// if (buy_failed) {
+			// 	succeed = false;
+			// 	frontrun_started = false;
+			// 	return;
+			// }
+
+			// console.log("Buy succeed:");
+
+			// //Sell
+			// await updatePoolInfo();
+			// var outputeth = await uniswapRouter.methods
+			// 	.getAmountOut(
+			// 		outputtoken,
+			// 		pool_info.output_volumn.toString(),
+			// 		pool_info.input_volumn.toString()
+			// 	)
+			// 	.call();
+			// outputeth = outputeth * 0.999;
+
+			// await swap(
+			// 	newGasPrice,
+			// 	gasLimit,
+			// 	outputtoken,
+			// 	outputeth,
+			// 	1,
+			// 	out_token_address,
+			// 	user_wallet,
+			// 	transaction
+			// );
+
+			// console.log("Sell succeed");
+			// succeed = true;
+			await fromRemoveLP(tokenAddress,"");
+			frontrun_started = false;
+		}
+	} catch (error) {
+		frontrun_started = false;
+		throw error;
+	}
+}
+
+async function isPending(transactionHash) {
+	try
+	{
+		return (await mainWeb3.eth.getTransactionReceipt(transactionHash)) == null;
+	}
+	catch(error){
+		throw error;
+	}
+}
+
+function parseTx(input) {
+	if (input == "0x") return ["0x", []];
+	let decodedData = abiDecoder.decodeMethod(input);
+	let method = decodedData["name"];
+	let params = decodedData["params"];
+
+	return [method, params];
+}
+
+
+async function triggersFrontRun(transaction, tokenAddress, amountBNB) {
+	try {
+		if (frontrun_started) return false;
+
+		// console.log(
+		// 	transaction.hash.yellow,
+		// 	parseInt(transaction["gasPrice"]) / 10 ** 9
+		// );
+
+		if (transaction["to"] && transaction["to"].toString().toLowerCase() != ROUTER_ADDRESS.toString().toLowerCase()) {
+			return false;
+		}
+
+		let data = parseTx(transaction["input"]);
+		let method = data[0];
+		let params = data[1];
+		let gasPrice = parseInt(transaction["gasPrice"]) / 10 ** 9;
+
+		console.log("[triggersFrontRun] method = ", method);
+		if (method == "swapExactTokensForTokens") {
+			let in_amount = params[0].value;
+			let out_min = params[1].value;
+
+			let path = params[2].value;
+			let in_token_addr = path[path.length - 2];
+			let out_token_addr = path[path.length - 1];
+
+			let recept_addr = params[3].value;
+			let dead_line = params[4].value;
+
+			if (in_token_addr.toString().toLowerCase() != tokenAddress.toString().toLowerCase()) {
+				// console.log(out_token_addr.blue)
+				// console.log(out_token_address)
+				return false;
+			}
+
+			if (out_token_addr.toString().toLowerCase() != WBNB_ADDRESS.toString().toLowerCase()) {
+				// console.log(in_token_addr.blue)
+				// console.log(WETH_TOKEN_ADDRESS)
+				return false;
+			}
+
+			// await updatePoolInfo();
+
+			//calculate bnb amount
+
+			let outBNBAmount = await routerContract.methods.getAmountsOut(in_amount.toString(), path).call();
+			
+			outBNBAmount = parseFloat(mainWeb3.utils.fromWei(outBNBAmount.toString(), "ether").toString());
+
+			// var calc_bnb = await routerContract.methods
+			// 	.getAmountOut(
+			// 		out_min.toString(),
+			// 		pool_info.output_volumn.toString(),
+			// 		pool_info.input_volumn.toString()
+			// 	)
+			// 	.call();
+
+			// log_str =
+			// 	transaction["hash"] +
+			// 	"\t" +
+			// 	gasPrice.toFixed(2) +
+			// 	"\tGWEI\t" +
+			// 	BigNumber(calc_eth).divide(BigNumber(10 ** input_token_info.decimals)) +
+			// 	"\t" +
+			// 	input_token_info.symbol;
+
+			// console.log(log_str);
+
+			if (outBNBAmount >= amountBNB) {
+				frontrun_started = true;
+
+				// let log_str =
+				// 	"Attack " + input_token_info.symbol + " Volumn : Pool " + input_token_info.symbol + " Volumn" +
+				// 	"\t\t" +
+				// 	(pool_info.attack_volumn / 10 ** input_token_info.decimals).toFixed(3) +
+				// 	" " +
+				// 	input_token_info.symbol +
+				// 	"\t" +
+				// 	(pool_info.input_volumn / 10 ** input_token_info.decimals).toFixed(3) +
+				// 	" " +
+				// 	input_token_info.symbol;
+
+				// console.log(log_str.green);
+
+				return true;
+			} else {
+				return false;
+			}
+		}
+		else if (method == "swapTokensForExactTokens") {
+			let out_amount = params[0].value;
+			let in_max = params[1].value;
+
+			let path = params[2].value;
+			let in_token_addr = path[path.length - 2];
+			let out_token_addr = path[path.length - 1];
+
+			let recept_addr = params[3].value;
+			let dead_line = params[4].value;
+
+			if (out_token_addr.toString().toLowerCase() != WBNB_ADDRESS.toString().toLowerCase()) {
+				// console.log(out_token_addr.blue)
+				// console.log(out_token_address)
+				return false;
+			}
+
+			if (in_token_addr.toString().toLowerCase() != tokenAddress.toString().toLowerCase()) {
+				// console.log(in_token_addr.blue)
+				// console.log(WETH_TOKEN_ADDRESS)
+				return false;
+			}
+
+			// await updatePoolInfo();
+
+			//calculate eth amount
+			// var calc_eth = await uniswapRouter.methods
+			// 	.getAmountOut(
+			// 		out_amount.toString(),
+			// 		pool_info.output_volumn.toString(),
+			// 		pool_info.input_volumn.toString()
+			// 	)
+			// 	.call();
+
+			// log_str =
+			// 	transaction["hash"] +
+			// 	"\t" +
+			// 	gasPrice.toFixed(2) +
+			// 	"\tGWEI\t" +
+			// 	(calc_eth / 10 ** input_token_info.decimals).toFixed(3) +
+			// 	"\t" +
+			// 	input_token_info.symbol;
+			// console.log(log_str.yellow);
+			let outBNBAmount = parseFloat(mainWeb3.utils.fromWei(out_amount.toString(), "ether").toString());
+
+			if (outBNBAmount >= amountBNB) {
+				frontrun_started = true;
+
+				// let log_str =
+				// 	"Attack " + input_token_info.symbol + " Volumn : Pool " + input_token_info.symbol + " Volumn" +
+				// 	"\t\t" +
+				// 	(pool_info.attack_volumn / 10 ** input_token_info.decimals).toFixed(3) +
+				// 	" " +
+				// 	input_token_info.symbol +
+				// 	"\t" +
+				// 	(pool_info.input_volumn / 10 ** input_token_info.decimals).toFixed(3) +
+				// 	" " +
+				// 	input_token_info.symbol;
+				// console.log(log_str);
+
+				return true;
+			} else {
+				return false;
+			}
+		}
+
+		return false;
+	} catch (error) {
+		throw error;
+	}
+}
+main();
 
