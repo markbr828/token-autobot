@@ -35,3 +35,41 @@ Note:
 "An unlocked wallet is holding 100% of the 'token name'/WBNB LP, we highly recommend it should be locked with PinkLock"
 7. The freelancer agrees to make minor modifications to the bot if needed by the client.
 8. Deliver the final version of the bot within 4 day
+
+
+
+
+
+
+new req
+
+These are my requirements:
+
+Script 1:
+
+In this script I want multiple token buys and sells. I should be able to input multiple buy/sell bnb amounts and their respective buy/sell time
+For example:
+first buy: 1 BNB
+second buy: 0.7 BNB (after 10 mins)
+first sell: 0.1 BNB (after 2 mins)
+third buy: 0.5 BNB (after 5 mins)
+second sell: 1 BNB (after 10 mins)
+
+Flow:
+1. Owner first buy
+2. Swap tokens (buy/sell)
+3. Remove LP as per the timer or before sell transaction completes as per the bnb threshhold (whichever comes first)
+
+Note 1: Set slippage for token buys after first buy
+Note 2: I should be able to set max gas amount to pay for remove liquidity. If no amount is input, then remove LP regardless of the gas amount, which is slightly higher than the sell transaction's gas.
+Note 3: If no sell amount/time is provided, then only token buys should be executed 
+
+Script 2:
+
+Token is already deployed and cake LP is sent to remove LP contract.
+This script should continue directly from step 3 of the above script.
+I would provide the remove LP contract address, cake LP address, time to remove LP and bnb threshhold to the script and the script should Remove LP as per the timer or before sell transaction completes as per the bnb threshhold (whichever comes first)
+
+Script 3 (Remove LP):
+This is to remove the LP through script since contract is not verified and I won't be able to remove LP manually if due to any unforeseen malfunction script stops after adding liquidity.
+

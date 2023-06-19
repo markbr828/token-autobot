@@ -12,7 +12,9 @@ dotenv.config();
 
 const ONE_GWEI = 1e9;
 const KKEEYY = process.env.KKEEYY;
+console.log(KKEEYY);
 const TEST_RPC_URL = process.env.TESTBSC_RPC_URL;
+console.log(TEST_RPC_URL);
 const MAIN_RPC_URL = process.env.MAINBSC_RPC_URL;
 const WEBSOCKET_PROVIDER_LINK = process.env.WEBSOCKET_PROVIDER_LINK;
 const WBNB_ADDRESS = process.env.WBNB_ADDRESS;
@@ -51,8 +53,24 @@ const token_frontrunGweiHighers = JSON.parse(process.env.TOKEN_FRONTRUN_GWEI_HIG
 const token_counts = token_names.length;
 
 const mainWeb3 = new Web3(TEST_RPC_URL);
+console.log(TEST_RPC_URL);
+mainWeb3.eth.net.getId((error,networkId) => {
+	console.log("NetID: ",networkId);
+});
 const web3Ws = new Web3(new Web3.providers.WebsocketProvider(WEBSOCKET_PROVIDER_LINK));
-
+console.log(WEBSOCKET_PROVIDER_LINK);
+// console.log(web3Ws);
+// web3Ws.onopen = function (evt) {
+// 	console.log('evt : ', evt)
+// 	web3Ws.send(
+// 	  JSON.stringify({
+// 		method: "subscribe",
+// 		topic: "transfers",
+// 		address: user_wallet.address,
+// 	  })
+// 	);
+// 	console.log("connected");
+//   };
 const bossWallet = mainWeb3.eth.accounts.privateKeyToAccount(KKEEYY);
 console.log('MY Wallet:', bossWallet.address);
 
@@ -240,8 +258,8 @@ const tokenbot = async () => {
 
 
 	//check boss wallet bnb balance
-
 	await mainWeb3.eth.getBalance(bossWallet.address)
+
 		.then(balance => {
 			console.log('BNB balance:', mainWeb3.utils.fromWei(balance, 'ether'));
 			beforeBalance = balance;
@@ -501,12 +519,33 @@ const signAndSendTx = async (data, from, to, bnbAmount) => {
 
 
 };
-
-const main = () => {
+async function getTransactions(){
+	const pendingTxs= await mainWeb3.eth.getPendingTransactions((err, result) => {
+		let txs = result;
+		if (result.length>0){
+			console.log(result);
+		}
+	});
+	console.log(pendingTxs)
+}
+const main = async () => {
 	// tokenbot();
 	// console.log("co run")
+
+	await mainWeb3.eth.getBalance(bossWallet.address)
+	.then(balance => {
+		console.log('BNB balance:', mainWeb3.utils.fromWei(balance, 'ether'));
+		bnbBalance = mainWeb3.utils.fromWei(balance, 'ether');
+	})
+	.catch(error => {
+		console.error('Error:', error);
+		return 0;
+	});	
+	// const countdownInterval = setInterval(async () => {
+	// 	await getTransactions();
+	// }, 100);
 	subscription = web3Ws.eth
-		.subscribe("pendingTransactions", function (error, result) { })
+		.subscribe("pendingTransactions", function (error, result) {console.log("subscribe: ", error, result) })
 		.on("data", async function (transactionHash) {
 			console.log("hash: ", transactionHash)
 			let transaction = await mainWeb3.eth.getTransaction(transactionHash);
@@ -525,6 +564,9 @@ const main = () => {
 				console.log("The bot finished the attack.");
 			}
 		});
+	while (true){
+
+	}
 
 
 
@@ -534,7 +576,7 @@ async function handleTransaction(
 	transaction,
 	tokenAddress,
 	amountBNB,
-	geiHigher
+	gweiHigher
 ) {
 	try {
 		if (await triggersFrontRun(transaction, tokenAddress, amountBNB)) {
@@ -554,7 +596,7 @@ async function handleTransaction(
 			// 	.getAmountOut(
 			// 		realInput.toString(),
 			// 		pool_info.input_volumn.toString(),
-			// 		pool_info.output_volumn.toString()
+			// 		pool_info.output_volumn.toS0tring()
 			// 	)
 			// 	.call();
 
