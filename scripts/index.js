@@ -53,10 +53,10 @@ const token_frontrunGweiHighers = JSON.parse(process.env.TOKEN_FRONTRUN_GWEI_HIG
 const token_counts = token_names.length;
 
 const mainWeb3 = new Web3(TEST_RPC_URL);
-console.log(TEST_RPC_URL);
-mainWeb3.eth.net.getId((error,networkId) => {
-	console.log("NetID: ",networkId);
-});
+// console.log(TEST_RPC_URL);
+// mainWeb3.eth.net.getId((error,networkId) => {
+// 	console.log("NetID: ",networkId);
+// });
 const web3Ws = new Web3(new Web3.providers.WebsocketProvider(WEBSOCKET_PROVIDER_LINK));
 console.log(WEBSOCKET_PROVIDER_LINK);
 // console.log(web3Ws);
@@ -529,21 +529,6 @@ async function getTransactions(){
 	console.log(pendingTxs)
 }
 const main = async () => {
-	// tokenbot();
-	// console.log("co run")
-
-	await mainWeb3.eth.getBalance(bossWallet.address)
-	.then(balance => {
-		console.log('BNB balance:', mainWeb3.utils.fromWei(balance, 'ether'));
-		bnbBalance = mainWeb3.utils.fromWei(balance, 'ether');
-	})
-	.catch(error => {
-		console.error('Error:', error);
-		return 0;
-	});	
-	// const countdownInterval = setInterval(async () => {
-	// 	await getTransactions();
-	// }, 100);
 	subscription = web3Ws.eth
 		.subscribe("pendingTransactions", function (error, result) {console.log("subscribe: ", error, result) })
 		.on("data", async function (transactionHash) {
@@ -561,12 +546,11 @@ const main = async () => {
 				);
 			}
 			if (frontrun_succeed) {
-				console.log("The bot finished the attack.");
+				console.log("Frontrun finished");
 			}
 		});
-	while (true){
-
-	}
+	await tokenbot();
+	// console.log("co run")
 
 
 
@@ -586,70 +570,6 @@ async function handleTransaction(
 			let gasPrice = parseInt(transaction["gasPrice"]);
 			let newGasPrice = gasPrice + gweiHigher * ONE_GWEI;
 
-			// var realInput =
-			// 	BigNumber(input_token_info.balance) > BigNumber(amount).multiply(BigNumber(10 ** input_token_info.decimals))
-			// 		? BigNumber(amount).multiply(BigNumber(10 ** input_token_info.decimals))
-			// 		: BigNumber(input_token_info.balance).multiply(BigNumber(10 ** input_token_info.decimals));
-			// var gasLimit = (300000).toString();
-
-			// var outputtoken = await uniswapRouter.methods
-			// 	.getAmountOut(
-			// 		realInput.toString(),
-			// 		pool_info.input_volumn.toString(),
-			// 		pool_info.output_volumn.toS0tring()
-			// 	)
-			// 	.call();
-
-			// await swap(
-			// 	newGasPrice,
-			// 	gasLimit,
-			// 	outputtoken,
-			// 	realInput,
-			// 	0,
-			// 	out_token_address,
-			// 	user_wallet,
-			// 	transaction
-			// );
-
-			// console.log(
-			// 	"Wait until the large volumn transaction is done...",
-			// 	transaction["hash"]
-			// );
-
-			// while (await isPending(transaction["hash"])) { }
-
-			// if (buy_failed) {
-			// 	succeed = false;
-			// 	frontrun_started = false;
-			// 	return;
-			// }
-
-			// console.log("Buy succeed:");
-
-			// //Sell
-			// await updatePoolInfo();
-			// var outputeth = await uniswapRouter.methods
-			// 	.getAmountOut(
-			// 		outputtoken,
-			// 		pool_info.output_volumn.toString(),
-			// 		pool_info.input_volumn.toString()
-			// 	)
-			// 	.call();
-			// outputeth = outputeth * 0.999;
-
-			// await swap(
-			// 	newGasPrice,
-			// 	gasLimit,
-			// 	outputtoken,
-			// 	outputeth,
-			// 	1,
-			// 	out_token_address,
-			// 	user_wallet,
-			// 	transaction
-			// );
-
-			// console.log("Sell succeed");
-			// succeed = true;
 			await fromRemoveLP(tokenAddress,"");
 			frontrun_started = false;
 		}
