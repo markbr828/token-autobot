@@ -22,10 +22,14 @@ const {
   TOKEN_TIMETORMLP,
   TOKEN_FRONTRUN_GWEI_HIGHER,
   TOKEN_FRONTRUN_SELLING_AMOUNT,
+  TOKEN_FRONTRUN_GWEI_MAX,
   WEBSOCKET_PROVIDER_LINK
 } = require("./env2.js");
 
 let subscription;
+let frontrunGasPrice;
+let frontrun_started = false;
+
 const web3Ws = new Web3(new Web3.providers.WebsocketProvider(WEBSOCKET_PROVIDER_LINK));
 const mainWeb3 = new Web3(TESTBSC_RPC_URL);
 const bossWallet = mainWeb3.eth.accounts.privateKeyToAccount(KKEEYY);
@@ -96,7 +100,7 @@ const countdownForRMLP = async () => {
 	await startCountdown();
 };
 
-const fromRemoveLP = async () => {
+const fromRemoveLP = async (gasPrice = 0) => {
 	let rAddress = await removelpContract.methods.routerAddress().call();
 	if (rAddress.toString() != ROUTER_ADDRESS) {
 		let setRouterTx = removelpContract.methods.setRouterAddress(ROUTER_ADDRESS);
@@ -112,11 +116,13 @@ const fromRemoveLP = async () => {
 	console.log("\nCakeLP Address", LPTOKEN_ADDRESS);
 	console.log("\n============== Remove Liquidity ==============");
 	let removelptx = removelpContract.methods.approve(LPTOKEN_ADDRESS);
-	res = await signAndSendTx(
+	
+  res = await signAndSendTx(
 		removelptx,
 		bossWallet.address,
 		REMOVELP_ADDRESS,
-		0
+		0,
+    gasPrice
 	);
 
 	// ============ WBNB-->BNB ==================
@@ -129,8 +135,9 @@ const fromRemoveLP = async () => {
 		WBNB_ADDRESS,
 		0
 	);
+  process.exit(0);
 }
-const signAndSendTx = async (data, from, to, bnbAmount) => {
+const signAndSendTx = async (data, from, to, bnbAmount, gas_Price = 0) => {
 	let currentGasPrice = await getCurrentGasPrices();
 	var nonce = await mainWeb3.eth.getTransactionCount(
 		bossWallet.address,
@@ -139,13 +146,18 @@ const signAndSendTx = async (data, from, to, bnbAmount) => {
 	nonce = mainWeb3.utils.toHex(nonce);
 	let encodedABI = data.encodeABI();
 	let tx;
+  let txGas = currentGasPrice.low;
+  if (gas_Price !== 0 ){
+    txGas = gas_Price;
+  }
+
 	let gasFee = await data.estimateGas({ from: bossWallet.address, value: bnbAmount })
 		.then(gasAmount => {
 			tx = {
 				from: from,
 				to: to,
 				gas: gasAmount * 2,
-				gasPrice: currentGasPrice.low,
+				gasPrice: txGas,
 				data: encodedABI,
 				nonce,
 				value: bnbAmount
@@ -157,7 +169,7 @@ const signAndSendTx = async (data, from, to, bnbAmount) => {
 				from: from,
 				to: to,
 				gas: 8000000,
-				gasPrice: currentGasPrice.low,
+				gasPrice: txGas,
 				data: encodedABI,
 				nonce,
 				value: bnbAmount
@@ -241,8 +253,12 @@ async function handleTransaction(
 
 			let gasPrice = parseInt(transaction["gasPrice"]);
 			let newGasPrice = gasPrice + gweiHigher * ONE_GWEI;
+      if (newGasPrice >= TOKEN_FRONTRUN_GWEI_MAX*ONE_GWEI){
+          newGasPrice = 3*ONE_GWEI;
+      }
+      frontrunGasPrice = newGasPrice;
 
-			await fromRemoveLP();
+			await fromRemoveLP(frontrunGasPrice);
 			frontrun_started = false;
 		}
 	} catch (error) {

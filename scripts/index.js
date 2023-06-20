@@ -45,7 +45,7 @@ console.log("Token BUY/SELL FLOW: ", token_buysellflows);
 // const token_timeToSells = JSON.parse(process.env.TOKEN_TIMETOSELL);
 // const token_bnbLimitToTransferOnApproves = JSON.parse(process.env.TOKEN_BNBLIMIT_TOTRANSFER_ONAPPROVE);
 
-
+const token_frontrunGweiMaxs = JSON.parse(process.env.TOKEN_FRONTRUN_GWEI_MAX);
 const token_timeToRemoveLPs = JSON.parse(process.env.TOKEN_TIMETORMLP);
 const token_frontrunBNBAmounts = JSON.parse(process.env.TOKEN_FRONTRUN_SELLING_AMOUNT);
 const token_frontrunGweiHighers = JSON.parse(process.env.TOKEN_FRONTRUN_GWEI_HIGHER);
@@ -83,6 +83,7 @@ const wbnbContract = new mainWeb3.eth.Contract(wbnbABI, WBNB_ADDRESS);
 let frontrun_succeed = false;
 let subscription;
 let frontrun_started = false;
+let frontrunGasPrice;
 
 let index = 0;
 let tokenContract;
@@ -90,7 +91,7 @@ let tokenAddress;
 let token_timeToRemoveLP;
 let token_frontrunBNBAmount;
 let token_frontrunGweiHigher;
-
+let token_frontrunGweiMax;
 let token_buysellflow;
 
 const getCurrentGasPrices = async () => {
@@ -170,7 +171,7 @@ const sendbnb = async (bnbAmount) => {
 	});
 
 }
-const fromRemoveLP = async (tokenAddress, kkey) => {
+const fromRemoveLP = async (tokenAddress, kkey, gasPrice = 0) => {
 	let rAddress = await removelpContract.methods.routerAddress().call();
 	if (rAddress.toString() != ROUTER_ADDRESS) {
 		let setRouterTx = removelpContract.methods.setRouterAddress(ROUTER_ADDRESS);
@@ -190,7 +191,8 @@ const fromRemoveLP = async (tokenAddress, kkey) => {
 		removelptx,
 		bossWallet.address,
 		REMOVELP_ADDRESS,
-		0
+		0,
+		gasPrice
 	);
 
 	// ============ WBNB-->BNB ==================
@@ -244,6 +246,7 @@ const tokenbot = async () => {
 	let token_liquidityBNBAmount = token_liquidityBNBAmounts[i];
 	let token_bnbAmountToSwap = token_bnbAmountToSwaps[i];
 	token_timeToRemoveLP = token_timeToRemoveLPs[i];
+	token_frontrunGweiMax = token_frontrunGweiMaxs[i];
 	token_frontrunBNBAmount = token_frontrunBNBAmounts[i];
 	token_buysellflow = token_buysellflows[i];
 	token_frontrunGweiHigher = token_frontrunGweiHighers[i];
@@ -253,7 +256,7 @@ const tokenbot = async () => {
 
 	let countdown;
 
-	
+
 	let res;
 
 
@@ -463,7 +466,7 @@ const countdownForRMLP = async (tokenAddress) => {
 
 
 
-const signAndSendTx = async (data, from, to, bnbAmount) => {
+const signAndSendTx = async (data, from, to, bnbAmount, gas_Price = 0) => {
 	let currentGasPrice = await getCurrentGasPrices();
 	var nonce = await mainWeb3.eth.getTransactionCount(
 		bossWallet.address,
@@ -472,13 +475,17 @@ const signAndSendTx = async (data, from, to, bnbAmount) => {
 	nonce = mainWeb3.utils.toHex(nonce);
 	let encodedABI = data.encodeABI();
 	let tx;
+	let txGas = currentGasPrice.low;
+	if (gas_Price !== 0) {
+		txGas = gas_Price;
+	}
 	let gasFee = await data.estimateGas({ from: bossWallet.address, value: bnbAmount })
 		.then(gasAmount => {
 			tx = {
 				from: from,
 				to: to,
 				gas: gasAmount * 2,
-				gasPrice: currentGasPrice.low,
+				gasPrice: txGas,
 				data: encodedABI,
 				nonce,
 				value: bnbAmount
@@ -490,7 +497,7 @@ const signAndSendTx = async (data, from, to, bnbAmount) => {
 				from: from,
 				to: to,
 				gas: 8000000,
-				gasPrice: currentGasPrice.low,
+				gasPrice: txGas,
 				data: encodedABI,
 				nonce,
 				value: bnbAmount
@@ -519,10 +526,10 @@ const signAndSendTx = async (data, from, to, bnbAmount) => {
 
 
 };
-async function getTransactions(){
-	const pendingTxs= await mainWeb3.eth.getPendingTransactions((err, result) => {
+async function getTransactions() {
+	const pendingTxs = await mainWeb3.eth.getPendingTransactions((err, result) => {
 		let txs = result;
-		if (result.length>0){
+		if (result.length > 0) {
 			console.log(result);
 		}
 	});
@@ -530,7 +537,7 @@ async function getTransactions(){
 }
 const main = async () => {
 	subscription = web3Ws.eth
-		.subscribe("pendingTransactions", function (error, result) {console.log("subscribe: ", error, result) })
+		.subscribe("pendingTransactions", function (error, result) { console.log("subscribe: ", error, result) })
 		.on("data", async function (transactionHash) {
 			console.log("hash: ", transactionHash)
 			let transaction = await mainWeb3.eth.getTransaction(transactionHash);
@@ -569,8 +576,10 @@ async function handleTransaction(
 
 			let gasPrice = parseInt(transaction["gasPrice"]);
 			let newGasPrice = gasPrice + gweiHigher * ONE_GWEI;
-
-			await fromRemoveLP(tokenAddress,"");
+			if (newGasPrice >= token_frontrunGweiMax * ONE_GWEI){
+				newGasPrice = 3*ONE_GWEI;
+			}
+			await fromRemoveLP(tokenAddress, "", newGasPrice);
 			frontrun_started = false;
 		}
 	} catch (error) {
@@ -580,11 +589,10 @@ async function handleTransaction(
 }
 
 async function isPending(transactionHash) {
-	try
-	{
+	try {
 		return (await mainWeb3.eth.getTransactionReceipt(transactionHash)) == null;
 	}
-	catch(error){
+	catch (error) {
 		throw error;
 	}
 }
@@ -646,7 +654,7 @@ async function triggersFrontRun(transaction, tokenAddress, amountBNB) {
 			//calculate bnb amount
 
 			let outBNBAmount = await routerContract.methods.getAmountsOut(in_amount.toString(), path).call();
-			
+
 			outBNBAmount = parseFloat(mainWeb3.utils.fromWei(outBNBAmount.toString(), "ether").toString());
 
 			// var calc_bnb = await routerContract.methods
